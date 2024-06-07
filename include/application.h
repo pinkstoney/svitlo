@@ -1,11 +1,14 @@
 #pragma once
 
-#include "raylib.h"
 #include <vector>
 #include <tuple>
+
+#include "raygui.h"
+#include "raylib.h"
+
 #include "shutdown-info.h"
 #include "shutdown-circle.h"
-#include "raygui.h"
+#include "database-manager.h"
 
 const int WINDOW_WIDTH = 1200;
 const int WINDOW_HEIGHT = 800;
@@ -20,9 +23,16 @@ public:
 public:
     void run();
 
+public:
+    void handleInput();
+    void drawUI();
+    void handleListView();
+
 private:
     void m_initializeWindow() const;
     std::tuple<Font, Font, Font> m_loadFonts() const;
+
+private:
     bool m_handleUserInput(char* info);
     void m_processData(ShutdownInfo& request, const std::string& inputInfo);
     void m_drawCircles(const ShutdownInfo& request, const Font& font) const;
@@ -34,6 +44,9 @@ private:
 private:
     bool m_addressEntered;
     bool m_addressSent;
+    bool m_dataProcessed = false;
+    bool m_displayListView = false;
+    int m_listViewActive = -1;
 
     std::string m_errorMessage;
 
@@ -41,4 +54,10 @@ private:
     Font m_defaultFont;
     Font m_discoveryFont;
     Font m_lexendFont;
+
+private:
+    DatabaseManager m_dbManager;
+
+    std::vector<std::string> m_allUserInfo;
+    std::string m_allUserInfoStr;
 };

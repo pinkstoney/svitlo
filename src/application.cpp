@@ -2,8 +2,9 @@
 
 
 Application::Application()
-    : m_addressEntered(false), m_addressSent(false)
+    : m_addressEntered(false), m_addressSent(false), m_dbManager("user_info.db")
 {
+    m_dbManager.initialize();
     m_initializeWindow();
     std::tie(m_defaultFont, m_discoveryFont, m_lexendFont) = m_loadFonts();
 }
@@ -40,6 +41,9 @@ std::tuple<Font, Font, Font> Application::m_loadFonts() const
 
 bool Application::m_handleUserInput(char* m_info)
 {
+    if (m_dataProcessed)
+        return true;
+
     if (!m_addressSent)
     {
         DrawText("Enter data:", 10, 30, 20, BLACK);
@@ -48,15 +52,28 @@ bool Application::m_handleUserInput(char* m_info)
 
     if (m_addressEntered && strlen(m_info) == 0)
     {
-        m_errorMessage = "Please enter some data before sending.";
         m_addressEntered = true;
         return false;
     }
 
+    // Only process the user input when the Enter key is pressed
+    if (IsKeyPressed(KEY_ENTER))
+    {
+        std::string info(m_info);
+        if (!info.empty())
+            m_processData(m_request, info);
+        else
+            std::cerr << "Error: User info is empty." << std::endl;
+
+    }
     return true;
 }
+
 void Application::m_processData(ShutdownInfo& request, const std::string& inputInfo)
 {
+    if (m_dataProcessed)
+        return;
+
     try
     {
         request.setPostData(inputInfo);
@@ -68,6 +85,13 @@ void Application::m_processData(ShutdownInfo& request, const std::string& inputI
         m_addressEntered = false;
         m_addressSent = true;
         m_errorMessage.clear();
+
+        // Save user input to the database only when no exceptions are thrown and the user info doesn't already exist
+        if (!m_dbManager.userInfoExist(inputInfo)) {
+            m_dbManager.saveUserInfo(inputInfo);
+        }
+
+        m_dataProcessed = true;
     }
     catch (const std::runtime_error& e)
     {
@@ -95,34 +119,95 @@ void Application::m_drawCircles(const ShutdownInfo& request, const Font& font) c
 
 void Application::run()
 {
+    std::vector<std::string> allUserInfo;
+    std::string allUserInfoStr;
+    Rectangle bounds = { 10, 100, 200, 300 };
+    int scrollIndex = 0;
+
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        if (m_addressSent)
-        {
-            m_drawCircles(m_request, m_lexendFont);
-
-            if (GuiButton((Rectangle){ 10, WINDOW_HEIGHT - 60, 200, 30 }, "Go back to data input"))
-            {
-                m_addressSent = false;
-                m_addressEntered = false;
-                m_errorMessage.clear();
-
-                memset(m_info, 0, sizeof(m_info));
-                m_request = ShutdownInfo();
-            }
-        }
-        else
-        {
-            if (m_handleUserInput(m_info) && IsKeyPressed(KEY_ENTER))
-                m_processData(m_request, m_info);
-        }
+        handleInput();
+        drawUI();
+        handleListView();
 
         if (!m_errorMessage.empty())
             DrawText(m_errorMessage.c_str(), 10, WINDOW_HEIGHT - 30, 20, RED);
 
         EndDrawing();
+    }
+}
+
+void Application::handleInput()
+{
+    if (m_addressSent)
+    {
+        if (GuiButton((Rectangle){ 10, WINDOW_HEIGHT - 60, 200, 30 }, "Go back to data input"))
+        {
+            m_addressSent = false;
+            m_addressEntered = false;
+            m_errorMessage.clear();
+            m_dataProcessed = false;
+            m_displayListView = false;
+            m_listViewActive = -1;
+
+            memset(m_info, 0, sizeof(m_info));
+            m_request = ShutdownInfo();
+        }
+    }
+    else
+    {
+        bool inputHandled = m_handleUserInput(m_info);
+
+        if (inputHandled && IsKeyPressed(KEY_ENTER))
+        {
+            // Only process user input and retrieve user input from the database when the user input is valid
+            if (m_errorMessage.empty())
+            {
+                std::string inputInfo = m_dbManager.getUserInfo(1);  // Assuming '1' as the user ID
+                m_processData(m_request, inputInfo);
+            }
+        }
+
+        if (GuiButton((Rectangle){ 10, WINDOW_HEIGHT - 60, 200, 30 }, "Use saved user info"))
+        {
+            m_displayListView = true;
+            m_listViewActive = -1;
+            m_allUserInfo = m_dbManager.getAllUserInfo();
+            m_allUserInfoStr.clear();
+            for (const std::string& userInfo : m_allUserInfo) {
+                m_allUserInfoStr += userInfo + ";";
+            }
+        }
+    }
+}
+
+void Application::drawUI()
+{
+    if (m_addressSent)
+    {
+        if (m_errorMessage.empty() && m_dataProcessed)
+            m_drawCircles(m_request, m_lexendFont);
+    }
+}
+
+void Application::handleListView()
+{
+    Rectangle bounds = { 10, 100, 200, 300 };
+    int scrollIndex = 0;
+
+    if (m_displayListView)
+    {
+        GuiListView(bounds, m_allUserInfoStr.c_str(), &scrollIndex, &m_listViewActive);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && m_listViewActive >= 0) {  // Only process the data when the left mouse button is pressed and an item is selected
+            std::string selectedUserInfo = m_allUserInfo[m_listViewActive];
+            m_processData(m_request, selectedUserInfo);
+            m_displayListView = false;
+        }
+
+        if (GuiButton((Rectangle){ 240, WINDOW_HEIGHT - 60, 200, 30 }, "Hide saved user"))
+            m_displayListView = false;
     }
 }

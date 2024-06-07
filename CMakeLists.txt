@@ -4,6 +4,7 @@ project(svitlo)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(CURL REQUIRED)
+find_package(SQLite3 REQUIRED)  # Add this line
 
 # Replace this path with the path to your Raylib installation
 list(APPEND CMAKE_PREFIX_PATH "/path/to/your/raylib")
@@ -35,7 +36,9 @@ add_executable(svitlo main.cpp
         include/application.h
         src/application.cpp
         libs/raygui.cpp
+        src/database-manager.cpp
+        include/database-manager.h
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)
-target_link_libraries(svitlo ${CURL_LIBRARIES} raylib)
+target_link_libraries(svitlo ${CURL_LIBRARIES} raylib SQLite::SQLite3)  # Add SQLite3 here
