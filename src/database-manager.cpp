@@ -23,11 +23,10 @@ void DatabaseManager::initialize()
     }
     else
     {
-        char *errMsg = nullptr;
-
         std::string sql = "CREATE TABLE IF NOT EXISTS UserInfo("
                           "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-                          "INFO TEXT NOT NULL);";
+                          "INFO TEXT NOT NULL,"
+                          "IS_HOME INTEGER DEFAULT 0);";
 
         executeSql(sql, nullptr, nullptr);
     }
@@ -42,6 +41,39 @@ void DatabaseManager::executeSql(const std::string& sql, int (*callback)(void*, 
         std::cerr << "Error: Failed to execute SQL statement. " << errMsg << std::endl;
         sqlite3_free(errMsg);
     }
+}
+
+void DatabaseManager::setHomeUserInfo(const std::string& info)
+{
+    std::string sql = "UPDATE UserInfo SET IS_HOME=0;";
+    executeSql(sql, nullptr, nullptr);
+
+    sql = "UPDATE UserInfo SET IS_HOME=1 WHERE INFO='" + info + "';";
+    executeSql(sql, nullptr, nullptr);
+}
+
+void DatabaseManager::removeHomeUserInfo()
+{
+    std::string sql = "UPDATE UserInfo SET IS_HOME=0;";
+    executeSql(sql, nullptr, nullptr);
+}
+
+std::string DatabaseManager::getHomeUserInfo()
+{
+    std::string sql = "SELECT INFO FROM UserInfo WHERE IS_HOME=1;";
+
+    std::string info;
+    auto callback = [](void *data, int argc, char **argv, char ** /*azColName*/)
+    {
+        auto infoPtr = static_cast<std::string *>(data);
+        if (argc > 0 && argv[0])
+            *infoPtr = argv[0];
+
+        return 0;
+    };
+
+    executeSql(sql, callback, &info);
+    return info;
 }
 
 void DatabaseManager::saveUserInfo(const std::string& info)

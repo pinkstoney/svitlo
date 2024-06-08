@@ -23,7 +23,12 @@ public:
     void deleteUserInfo(const std::string& info);
     bool isDatabaseEmpty();
 
+    std::string getHomeUserInfo();
+    void setHomeUserInfo(const std::string &info);
+    void removeHomeUserInfo();
+
 private:
     std::string m_dbPath;
     sqlite3 *m_db;
+
 };

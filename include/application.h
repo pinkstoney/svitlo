@@ -27,6 +27,11 @@ public:
     void handleInput();
     void drawUI();
     void handleListView();
+    void handleBackToDataInput();
+    void handleSavedUserInfo();
+    void handleDeleteUserInfo();
+    void handleHomeButtons();
+    void handleHideSavedUser();
 
 private:
     void m_initializeWindow() const;
@@ -61,9 +66,4 @@ private:
     std::vector<std::string> m_allUserInfo;
     std::string m_allUserInfoStr;
 
-    void handleBackToDataInput();
-
-    void handleSavedUserInfo();
-
-    void handleDeleteUserInfo();
 };

@@ -39,7 +39,7 @@ std::tuple<Font, Font, Font> Application::m_loadFonts() const
     return std::make_tuple(localDefaultFont, localDiscovery, localLexend);
 }
 
-bool Application::m_handleUserInput(char* m_info)
+bool Application::m_handleUserInput(char* inputInfo)
 {
     if (m_dataProcessed)
         return true;
@@ -47,10 +47,10 @@ bool Application::m_handleUserInput(char* m_info)
     if (!m_addressSent)
     {
         DrawText("Enter data:", 10, 30, 20, BLACK);
-        m_addressEntered = GuiTextBox((Rectangle){ 140, 23, 200, 30 }, m_info, 256, true);
+        m_addressEntered = GuiTextBox((Rectangle){ 140, 23, 200, 30 }, inputInfo, 256, true);
     }
 
-    if (m_addressEntered && strlen(m_info) == 0)
+    if (m_addressEntered && strlen(inputInfo) == 0)
     {
         m_addressEntered = true;
         return false;
@@ -58,7 +58,7 @@ bool Application::m_handleUserInput(char* m_info)
 
     if (IsKeyPressed(KEY_ENTER))
     {
-        std::string info(m_info);
+        std::string info(inputInfo);
         if (!info.empty())
             m_processData(m_request, info);
         else
@@ -116,15 +116,18 @@ void Application::m_drawCircles(const ShutdownInfo& request, const Font& font) c
 
 void Application::run()
 {
+    if (std::string homeUserInfo = m_dbManager.getHomeUserInfo(); !homeUserInfo.empty())
+        m_processData(m_request, homeUserInfo);
+
     std::vector<std::string> allUserInfo;
     std::string allUserInfoStr;
-    Rectangle bounds = { 10, 100, 200, 300 };
-    int scrollIndex = 0;
 
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
+
+        std::string homeUserInfo = m_dbManager.getHomeUserInfo();
 
         handleInput();
         drawUI();
@@ -142,16 +145,10 @@ void Application::handleInput()
     if (m_addressSent)
         handleBackToDataInput();
 
-
-    bool inputHandled = m_handleUserInput(m_info);
-
-    if (inputHandled && IsKeyPressed(KEY_ENTER))
+    if (bool inputHandled = m_handleUserInput(m_info); inputHandled && IsKeyPressed(KEY_ENTER) && m_errorMessage.empty())
     {
-        if (m_errorMessage.empty())
-        {
-            std::string inputInfo = m_dbManager.getUserInfo(1);
-            m_processData(m_request, inputInfo);
-        }
+        std::string inputInfo = m_dbManager.getUserInfo(1);
+        m_processData(m_request, inputInfo);
     }
 
     handleSavedUserInfo();
@@ -175,7 +172,7 @@ void Application::handleBackToDataInput()
 
 void Application::handleSavedUserInfo()
 {
-    if (!m_dbManager.isDatabaseEmpty() && !m_dataProcessed)
+    if (!m_dbManager.isDatabaseEmpty() && !m_dataProcessed && !m_displayListView)
     {
         if (GuiButton((Rectangle) {10, WINDOW_HEIGHT - 60, 200, 30}, "Use saved user info"))
         {
@@ -206,11 +203,33 @@ void Application::handleListView()
             m_displayListView = false;
         }
 
+        handleHomeButtons();
         handleDeleteUserInfo();
-
-        if (GuiButton((Rectangle){ 240, WINDOW_HEIGHT - 60, 200, 30 }, "Hide saved user"))
-            m_displayListView = false;
+        handleHideSavedUser();
     }
+}
+
+void Application::handleHomeButtons()
+{
+    for (int i = 0; i < m_allUserInfo.size(); i++)
+    {
+        if (m_allUserInfo[i] == m_dbManager.getHomeUserInfo())
+        {
+            if (GuiButton((Rectangle){ 330, static_cast<float>(100 + i * 30), 150, 30 }, "Remove as Home"))
+                m_dbManager.removeHomeUserInfo();
+        }
+        else
+        {
+            if (GuiButton((Rectangle){ 330, static_cast<float>(100 + i * 30), 150, 30 }, "Set as Home"))
+                m_dbManager.setHomeUserInfo(m_allUserInfo[i]);
+        }
+    }
+}
+
+void Application::handleHideSavedUser()
+{
+    if (GuiButton((Rectangle){ 240, WINDOW_HEIGHT - 60, 200, 30 }, "Hide saved user"))
+        m_displayListView = false;
 }
 
 void Application::handleDeleteUserInfo()
@@ -231,12 +250,9 @@ void Application::handleDeleteUserInfo()
 
 void Application::drawUI()
 {
-    if (m_addressSent)
+    if (m_addressSent && m_errorMessage.empty() && m_dataProcessed)
     {
-        if (m_errorMessage.empty() && m_dataProcessed)
-        {
-            m_displayListView = false;
-            m_drawCircles(m_request, m_lexendFont);
-        }
+        m_displayListView = false;
+        m_drawCircles(m_request, m_lexendFont);
     }
 }
