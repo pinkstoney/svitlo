@@ -20,6 +20,8 @@ public:
     void saveUserInfo(const std::string& info);
     std::string getUserInfo(int id);
     std::vector<std::string> getAllUserInfo();
+    void deleteUserInfo(const std::string& info);
+    bool isDatabaseEmpty();
 
 private:
     std::string m_dbPath;

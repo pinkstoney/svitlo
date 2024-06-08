@@ -109,3 +109,27 @@ std::vector<std::string> DatabaseManager::getAllUserInfo()
     executeSql(sql, callback, &allInfo);
     return allInfo;
 }
+
+void DatabaseManager::deleteUserInfo(const std::string& info)
+{
+    std::string sql = "DELETE FROM UserInfo WHERE INFO='" + info + "';";
+    executeSql(sql, nullptr, nullptr);
+}
+
+bool DatabaseManager::isDatabaseEmpty()
+{
+    std::string sql = "SELECT COUNT(*) FROM UserInfo;";
+
+    int count = 0;
+
+    auto callback = [](void *data, int argc, char **argv, char ** /*azColName*/)
+    {
+        auto countPtr = static_cast<int*>(data);
+        if (argc > 0 && argv[0])
+            *countPtr = std::stoi(argv[0]);
+        return 0;
+    };
+
+    executeSql(sql, callback, &count);
+    return count == 0;
+}

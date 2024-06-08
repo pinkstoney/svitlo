@@ -56,7 +56,6 @@ bool Application::m_handleUserInput(char* m_info)
         return false;
     }
 
-    // Only process the user input when the Enter key is pressed
     if (IsKeyPressed(KEY_ENTER))
     {
         std::string info(m_info);
@@ -86,10 +85,8 @@ void Application::m_processData(ShutdownInfo& request, const std::string& inputI
         m_addressSent = true;
         m_errorMessage.clear();
 
-        // Save user input to the database only when no exceptions are thrown and the user info doesn't already exist
-        if (!m_dbManager.userInfoExist(inputInfo)) {
+        if (!m_dbManager.userInfoExist(inputInfo))
             m_dbManager.saveUserInfo(inputInfo);
-        }
 
         m_dataProcessed = true;
     }
@@ -143,43 +140,91 @@ void Application::run()
 void Application::handleInput()
 {
     if (m_addressSent)
-    {
-        if (GuiButton((Rectangle){ 10, WINDOW_HEIGHT - 60, 200, 30 }, "Go back to data input"))
-        {
-            m_addressSent = false;
-            m_addressEntered = false;
-            m_errorMessage.clear();
-            m_dataProcessed = false;
-            m_displayListView = false;
-            m_listViewActive = -1;
+        handleBackToDataInput();
 
-            memset(m_info, 0, sizeof(m_info));
-            m_request = ShutdownInfo();
+
+    bool inputHandled = m_handleUserInput(m_info);
+
+    if (inputHandled && IsKeyPressed(KEY_ENTER))
+    {
+        if (m_errorMessage.empty())
+        {
+            std::string inputInfo = m_dbManager.getUserInfo(1);
+            m_processData(m_request, inputInfo);
         }
     }
-    else
+
+    handleSavedUserInfo();
+}
+
+void Application::handleBackToDataInput()
+{
+    if (GuiButton((Rectangle){ 990, WINDOW_HEIGHT - 60, 200, 30 }, "Go back to data input"))
     {
-        bool inputHandled = m_handleUserInput(m_info);
+        m_addressSent = false;
+        m_addressEntered = false;
+        m_errorMessage.clear();
+        m_dataProcessed = false;
+        m_displayListView = false;
+        m_listViewActive = -1;
 
-        if (inputHandled && IsKeyPressed(KEY_ENTER))
-        {
-            // Only process user input and retrieve user input from the database when the user input is valid
-            if (m_errorMessage.empty())
-            {
-                std::string inputInfo = m_dbManager.getUserInfo(1);  // Assuming '1' as the user ID
-                m_processData(m_request, inputInfo);
-            }
-        }
+        memset(m_info, 0, sizeof(m_info));
+        m_request = ShutdownInfo();
+    }
+}
 
-        if (GuiButton((Rectangle){ 10, WINDOW_HEIGHT - 60, 200, 30 }, "Use saved user info"))
+void Application::handleSavedUserInfo()
+{
+    if (!m_dbManager.isDatabaseEmpty() && !m_dataProcessed)
+    {
+        if (GuiButton((Rectangle) {10, WINDOW_HEIGHT - 60, 200, 30}, "Use saved user info"))
         {
             m_displayListView = true;
             m_listViewActive = -1;
             m_allUserInfo = m_dbManager.getAllUserInfo();
             m_allUserInfoStr.clear();
-            for (const std::string& userInfo : m_allUserInfo) {
+
+            for (const std::string &userInfo: m_allUserInfo)
                 m_allUserInfoStr += userInfo + ";";
-            }
+
+        }
+    }
+}
+
+void Application::handleListView()
+{
+    Rectangle bounds = { 10, 100, 200, 300 };
+    int scrollIndex = 0;
+
+    if (m_displayListView && !m_dbManager.isDatabaseEmpty())
+    {
+        GuiListView(bounds, m_allUserInfoStr.c_str(), &scrollIndex, &m_listViewActive);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && m_listViewActive >= 0)
+        {
+            std::string selectedUserInfo = m_allUserInfo[m_listViewActive];
+            m_processData(m_request, selectedUserInfo);
+            m_displayListView = false;
+        }
+
+        handleDeleteUserInfo();
+
+        if (GuiButton((Rectangle){ 240, WINDOW_HEIGHT - 60, 200, 30 }, "Hide saved user"))
+            m_displayListView = false;
+    }
+}
+
+void Application::handleDeleteUserInfo()
+{
+    for (int i = 0; i < m_allUserInfo.size(); i++)
+    {
+        if (GuiButton((Rectangle){ 220, static_cast<float>(100 + i * 30), 100, 30 }, "Delete"))
+        {
+            m_dbManager.deleteUserInfo(m_allUserInfo[i]);
+            m_allUserInfo = m_dbManager.getAllUserInfo();
+            m_allUserInfoStr.clear();
+
+            for (const std::string& userInfo : m_allUserInfo)
+                m_allUserInfoStr += userInfo + ";";
         }
     }
 }
@@ -189,25 +234,9 @@ void Application::drawUI()
     if (m_addressSent)
     {
         if (m_errorMessage.empty() && m_dataProcessed)
+        {
+            m_displayListView = false;
             m_drawCircles(m_request, m_lexendFont);
-    }
-}
-
-void Application::handleListView()
-{
-    Rectangle bounds = { 10, 100, 200, 300 };
-    int scrollIndex = 0;
-
-    if (m_displayListView)
-    {
-        GuiListView(bounds, m_allUserInfoStr.c_str(), &scrollIndex, &m_listViewActive);
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && m_listViewActive >= 0) {  // Only process the data when the left mouse button is pressed and an item is selected
-            std::string selectedUserInfo = m_allUserInfo[m_listViewActive];
-            m_processData(m_request, selectedUserInfo);
-            m_displayListView = false;
         }
-
-        if (GuiButton((Rectangle){ 240, WINDOW_HEIGHT - 60, 200, 30 }, "Hide saved user"))
-            m_displayListView = false;
     }
 }

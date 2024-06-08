@@ -60,4 +60,10 @@ private:
 
     std::vector<std::string> m_allUserInfo;
     std::string m_allUserInfoStr;
+
+    void handleBackToDataInput();
+
+    void handleSavedUserInfo();
+
+    void handleDeleteUserInfo();
 };
