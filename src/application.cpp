@@ -2,7 +2,7 @@
 
 
 Application::Application()
-    : m_addressEntered(false), m_addressSent(false), m_dbManager("user_info.db")
+        : m_addressEntered(false), m_addressSent(false), m_dbManager("user_info.db"), m_userChoiceIndex(0)
 {
     m_dbManager.initialize();
     m_initializeWindow();
@@ -75,7 +75,13 @@ void Application::m_processData(ShutdownInfo& request, const std::string& inputI
 
     try
     {
-        request.setPostData(inputInfo);
+        std::string userChoice;
+        if (std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit))
+            userChoice = "accountNumber";
+        else
+            userChoice = "address";
+
+        request.setPostData(userChoice, inputInfo);
         std::string response = request.send();
 
         request.processRawElectricityData(response);

@@ -32,11 +32,21 @@ void ShutdownInfo::addHeader(const std::string& header)
     s_headers = curl_slist_append(s_headers, header.c_str());
 }
 
-void ShutdownInfo::setPostData(const std::string& info)
+void ShutdownInfo::setPostData(const std::string& choice, const std::string& info)
 {
-    m_postData = "accountNumber=" + info + "&userSearchChoice=pob&address=";
+    if (choice == "accountNumber")
+    {
+        m_postData = "accountNumber=" + info + "&userSearchChoice=pob&address=";
+    }
+    else if (choice == "address")
+    {
+        m_postData = "accountNumber=&userSearchChoice=pob&address=" + info;
+    }
+    else
+    {
+        throw std::invalid_argument("Invalid choice. Please choose either 'accountNumber' or 'address'.");
+    }
 }
-
 std::string ShutdownInfo::send()
 {
     CURL *curl;
@@ -134,7 +144,8 @@ void ShutdownInfo::formatElectricityData(const std::string& rawData)
     for (const auto& hourData : todayHoursList)
         processHour(hourData, /*isToday=*/true);
 
-    if (data["graphs"].contains("tomorrow")) {
+    if (data["graphs"].contains("tomorrow"))
+    {
         auto tomorrowHoursList = data["graphs"]["tomorrow"]["hoursList"];
         for (const auto& hourData : tomorrowHoursList)
             processHour(hourData, /*isToday=*/false);

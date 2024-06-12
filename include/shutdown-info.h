@@ -17,7 +17,7 @@ public:
 
 public:
     void addHeader(const std::string& header);
-    void setPostData(const std::string&);
+    void setPostData(const std::string& choice, const std::string& info);
     std::string send();
 
     void processRawElectricityData(const std::string& rawData) const;

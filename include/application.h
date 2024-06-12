@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <tuple>
+#include <algorithm>
 
 #include "raygui.h"
 #include "raylib.h"
@@ -47,6 +48,8 @@ private:
     char m_info[256];
 
 private:
+    int m_userChoiceIndex;
+
     bool m_addressEntered;
     bool m_addressSent;
     bool m_dataProcessed = false;
