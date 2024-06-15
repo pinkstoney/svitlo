@@ -1,146 +1,54 @@
 #include "../include/application.h"
 
+ApplicationSpecification appSpec;
 
 Application::Application()
-        : m_addressEntered(false), m_addressSent(false), m_dbManager("user_info.db"), m_userChoiceIndex(0)
+        : m_uiManager(), m_dbManager("user_info.db"), m_isAddressEntered(false), m_isAddressSent(false),
+          m_isDataProcessed(false), m_isDataListDisplayed(false), m_DataListCurrentActive(-1)
 {
-    m_dbManager.initialize();
-    m_initializeWindow();
-    std::tie(m_defaultFont, m_discoveryFont, m_lexendFont) = m_loadFonts();
+    init();
+
+    m_dbManager.init();
+    m_uiManager.loadFonts();
+
+    memset(m_info, 0, sizeof(m_info));
 }
 
 Application::~Application()
 {
-    GuiSetFont(m_defaultFont);
-    UnloadFont(m_discoveryFont);
     CloseWindow();
 }
 
-void Application::m_initializeWindow() const
+void Application::init() const
 {
-    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Electricity Information");
+    InitWindow(appSpec.WINDOW_WIDTH, appSpec.WINDOW_HEIGHT, "Shutdown Info");
+    SetTargetFPS(60);
     GuiLoadStyle("../res/styles/candy/style_candy.rgs");
-    SetTargetFPS(TARGET_FPS);
-}
 
-std::tuple<Font, Font, Font> Application::m_loadFonts() const
-{
-    Font localDefaultFont = GetFontDefault();
-
-    std::vector<int> codepoints(512, 0);
-    for (int i = 0; i < 95; i++) codepoints[i] = 32 + i;
-    for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
-    Font localDiscovery = LoadFontEx("../res/fonts/discovery.otf", 30, codepoints.data(), static_cast<int>(codepoints.size()));
-
-    GuiSetFont(localDiscovery);
-
-    Font localLexend = LoadFont("../res/fonts/Lexend/static/Lexend-Bold.ttf");
-
-    return std::make_tuple(localDefaultFont, localDiscovery, localLexend);
-}
-
-bool Application::m_handleUserInput(char* inputInfo)
-{
-    if (m_dataProcessed)
-        return true;
-
-    if (!m_addressSent)
-    {
-        DrawText("Enter data:", 10, 30, 20, BLACK);
-        m_addressEntered = GuiTextBox((Rectangle){ 140, 23, 200, 30 }, inputInfo, 256, true);
-    }
-
-    if (m_addressEntered && strlen(inputInfo) == 0)
-    {
-        m_addressEntered = true;
-        return false;
-    }
-
-    if (IsKeyPressed(KEY_ENTER))
-    {
-        std::string info(inputInfo);
-        if (!info.empty())
-            m_processData(m_request, info);
-        else
-            std::cerr << "Error: User info is empty." << std::endl;
-
-    }
-    return true;
-}
-
-void Application::m_processData(ShutdownInfo& request, const std::string& inputInfo)
-{
-    if (m_dataProcessed)
-        return;
-
-    try
-    {
-        std::string userChoice;
-        if (std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit))
-            userChoice = "accountNumber";
-        else
-            userChoice = "address";
-
-        request.setPostData(userChoice, inputInfo);
-        std::string response = request.send();
-
-        request.processRawElectricityData(response);
-        request.formatElectricityData(response);
-
-        m_addressEntered = false;
-        m_addressSent = true;
-        m_errorMessage.clear();
-
-        if (!m_dbManager.userInfoExist(inputInfo))
-            m_dbManager.saveUserInfo(inputInfo);
-
-        m_dataProcessed = true;
-    }
-    catch (const std::runtime_error& e)
-    {
-        std::cerr << "Error: " << e.what() << std::endl;
-
-        if (std::string(e.what()).find("Received empty data") != std::string::npos)
-            m_errorMessage = "Received empty data. Please check the correctness of your input or try again later.";
-        else
-            m_errorMessage = "An error occurred. Please try again later.";
-
-        m_addressEntered = true;
-    }
-}
-
-void Application::m_drawCircles(const ShutdownInfo& request, const Font& font) const
-{
-    DrawText("Today", 100, 100, 50, BLACK);
-    ShutdownCircle circleToday({300, 450}, 270, 100, request.getWillBeElectricityToday(), request.getMightBeElectricityToday(), request.getWontBeElectricityToday(), font, request.getQueue(), request.getSubqueue());
-    circleToday.drawHourSegments();
-
-    DrawText("Tomorrow", 850, 100, 50, BLACK);
-    ShutdownCircle circleTomorrow({900, 450}, 270, 100, request.getWillBeElectricityTomorrow(), request.getMightBeElectricityTomorrow(), request.getWontBeElectricityTomorrow(), font, request.getQueue(), request.getSubqueue());
-    circleTomorrow.drawHourSegments();
 }
 
 void Application::run()
 {
     if (std::string homeUserInfo = m_dbManager.getHomeUserInfo(); !homeUserInfo.empty())
-        m_processData(m_request, homeUserInfo);
-
-    std::vector<std::string> allUserInfo;
-    std::string allUserInfoStr;
+        processData(homeUserInfo);
 
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
-        std::string homeUserInfo = m_dbManager.getHomeUserInfo();
-
         handleInput();
-        drawUI();
+
+        if (m_isAddressSent && m_errorMessage.empty() && m_isDataProcessed)
+        {
+            m_isDataListDisplayed = false;
+            m_uiManager.drawCircles(m_request, m_uiManager.getLexendFont());
+        }
+
         handleListView();
 
         if (!m_errorMessage.empty())
-            DrawText(m_errorMessage.c_str(), 10, WINDOW_HEIGHT - 30, 20, RED);
+            m_uiManager.drawText(m_errorMessage, 10, appSpec.WINDOW_HEIGHT - 30, 20, RED);
 
         EndDrawing();
     }
@@ -148,28 +56,34 @@ void Application::run()
 
 void Application::handleInput()
 {
-    if (m_addressSent)
-        handleBackToDataInput();
-
-    if (bool inputHandled = m_handleUserInput(m_info); inputHandled && IsKeyPressed(KEY_ENTER) && m_errorMessage.empty())
+    if (!m_isAddressSent)
     {
-        std::string inputInfo = m_dbManager.getUserInfo(1);
-        m_processData(m_request, inputInfo);
-    }
+        m_uiManager.drawText("Enter data:", 10, 30, 20, BLACK);
+        if (m_uiManager.textBox({140, 23, 200, 30}, m_info, sizeof(m_info), true))
+            m_isAddressEntered = true;
 
-    handleSavedUserInfo();
+        if (IsKeyPressed(KEY_ENTER) && !m_isAddressSent && m_isAddressEntered && m_errorMessage.empty())
+        {
+            std::string inputInfo(m_info);
+            processData(inputInfo);
+        }
+
+        handleSavedUserInfo();
+    }
+    else
+        handleBackToDataInput();
 }
 
 void Application::handleBackToDataInput()
 {
-    if (GuiButton((Rectangle){ 990, WINDOW_HEIGHT - 60, 200, 30 }, "Go back to data input"))
+    if (m_uiManager.button({990, static_cast<float>(appSpec.WINDOW_HEIGHT - 60), 200, 30}, "Go back to data input"))
     {
-        m_addressSent = false;
-        m_addressEntered = false;
+        m_isAddressSent = false;
+        m_isAddressEntered = false;
         m_errorMessage.clear();
-        m_dataProcessed = false;
-        m_displayListView = false;
-        m_listViewActive = -1;
+        m_isDataProcessed = false;
+        m_isDataListDisplayed = false;
+        m_DataListCurrentActive = -1;
 
         memset(m_info, 0, sizeof(m_info));
         m_request = ShutdownInfo();
@@ -178,35 +92,33 @@ void Application::handleBackToDataInput()
 
 void Application::handleSavedUserInfo()
 {
-    if (!m_dbManager.isDatabaseEmpty() && !m_dataProcessed && !m_displayListView)
+    if (!m_dbManager.isDatabaseEmpty() && !m_isDataProcessed && !m_isDataListDisplayed)
     {
-        if (GuiButton((Rectangle) {10, WINDOW_HEIGHT - 60, 200, 30}, "Use saved user info"))
+        if (m_uiManager.button({10, static_cast<float>((appSpec.WINDOW_HEIGHT - 60)), 200, 30}, "Use saved user info"))
         {
-            m_displayListView = true;
-            m_listViewActive = -1;
+            m_isDataListDisplayed = true;
+            m_DataListCurrentActive = -1;
             m_allUserInfo = m_dbManager.getAllUserInfo();
             m_allUserInfoStr.clear();
-
             for (const std::string &userInfo: m_allUserInfo)
                 m_allUserInfoStr += userInfo + ";";
-
         }
     }
 }
 
 void Application::handleListView()
 {
-    Rectangle bounds = { 10, 100, 200, 300 };
+    Rectangle bounds = {10, 100, 200, 300};
     int scrollIndex = 0;
 
-    if (m_displayListView && !m_dbManager.isDatabaseEmpty())
+    if (m_isDataListDisplayed && !m_dbManager.isDatabaseEmpty())
     {
-        GuiListView(bounds, m_allUserInfoStr.c_str(), &scrollIndex, &m_listViewActive);
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && m_listViewActive >= 0)
+        m_uiManager.listView(bounds, m_allUserInfoStr.c_str(), &scrollIndex, &m_DataListCurrentActive);
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && m_DataListCurrentActive >= 0)
         {
-            std::string selectedUserInfo = m_allUserInfo[m_listViewActive];
-            m_processData(m_request, selectedUserInfo);
-            m_displayListView = false;
+            std::string selectedUserInfo = m_allUserInfo[m_DataListCurrentActive];
+            processData(selectedUserInfo);
+            m_isDataListDisplayed = false;
         }
 
         handleHomeButtons();
@@ -221,12 +133,12 @@ void Application::handleHomeButtons()
     {
         if (m_allUserInfo[i] == m_dbManager.getHomeUserInfo())
         {
-            if (GuiButton((Rectangle){ 330, static_cast<float>(100 + i * 30), 150, 30 }, "Remove as Home"))
+            if (m_uiManager.button({330, static_cast<float>(100 + i * 30), 150, 30}, "Remove as Home"))
                 m_dbManager.removeHomeUserInfo();
         }
         else
         {
-            if (GuiButton((Rectangle){ 330, static_cast<float>(100 + i * 30), 150, 30 }, "Set as Home"))
+            if (m_uiManager.button({330, static_cast<float>(100 + i * 30), 150, 30}, "Set as Home"))
                 m_dbManager.setHomeUserInfo(m_allUserInfo[i]);
         }
     }
@@ -234,15 +146,15 @@ void Application::handleHomeButtons()
 
 void Application::handleHideSavedUser()
 {
-    if (GuiButton((Rectangle){ 240, WINDOW_HEIGHT - 60, 200, 30 }, "Hide saved user"))
-        m_displayListView = false;
+    if (m_uiManager.button({240, static_cast<float>(appSpec.WINDOW_HEIGHT - 60), 200, 30}, "Hide saved user"))
+        m_isDataListDisplayed = false;
 }
 
 void Application::handleDeleteUserInfo()
 {
     for (int i = 0; i < m_allUserInfo.size(); i++)
     {
-        if (GuiButton((Rectangle){ 220, static_cast<float>(100 + i * 30), 100, 30 }, "Delete"))
+        if (m_uiManager.button({220, static_cast<float>(100 + i * 30), 100, 30}, "Delete"))
         {
             m_dbManager.deleteUserInfo(m_allUserInfo[i]);
             m_allUserInfo = m_dbManager.getAllUserInfo();
@@ -254,11 +166,32 @@ void Application::handleDeleteUserInfo()
     }
 }
 
-void Application::drawUI()
+void Application::processData(const std::string& inputInfo)
 {
-    if (m_addressSent && m_errorMessage.empty() && m_dataProcessed)
+    if (m_isDataProcessed)
+        return;
+
+    try
     {
-        m_displayListView = false;
-        m_drawCircles(m_request, m_lexendFont);
+        std::string userChoice = std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit) ? "accountNumber" : "address";
+        m_request.setPostData(userChoice, inputInfo);
+        std::string response = m_request.send();
+        m_request.processRawElectricityData(response);
+        m_request.formatElectricityData(response);
+
+        m_isAddressEntered = false;
+        m_isAddressSent = true;
+        m_errorMessage.clear();
+
+        if (!m_dbManager.isUserInfoExist(inputInfo))
+            m_dbManager.saveUserInfo(inputInfo);
+
+        m_isDataProcessed = true;
+    }
+    catch (const std::runtime_error& e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        m_errorMessage = e.what();
     }
 }
+

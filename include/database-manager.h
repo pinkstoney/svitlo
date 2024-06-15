@@ -12,23 +12,24 @@ public:
     ~DatabaseManager();
 
 public:
-    void initialize();
+    void init();
     void executeSql(const std::string& sql, int (*callback)(void*, int, char**, char**), void* data);
 
 public:
-    bool userInfoExist(const std::string& info);
-    void saveUserInfo(const std::string& info);
-    std::string getUserInfo(int id);
-    std::vector<std::string> getAllUserInfo();
-    void deleteUserInfo(const std::string& info);
+    bool isUserInfoExist(const std::string& info);
     bool isDatabaseEmpty();
 
+    void saveUserInfo(const std::string& info);
+    void deleteUserInfo(const std::string& info);
+
+    std::string getUserInfo(int id);
+    std::vector<std::string> getAllUserInfo();
     std::string getHomeUserInfo();
+
     void setHomeUserInfo(const std::string &info);
     void removeHomeUserInfo();
 
 private:
     std::string m_dbPath;
     sqlite3 *m_db;
-
 };

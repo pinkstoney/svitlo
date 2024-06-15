@@ -1,19 +1,17 @@
 #pragma once
 
-#include <vector>
-#include <tuple>
-#include <algorithm>
-
 #include "raygui.h"
-#include "raylib.h"
 
+#include "ui-manager.h"
 #include "shutdown-info.h"
-#include "shutdown-circle.h"
 #include "database-manager.h"
 
-const int WINDOW_WIDTH = 1200;
-const int WINDOW_HEIGHT = 800;
-const int TARGET_FPS = 60;
+struct ApplicationSpecification
+{
+    const int WINDOW_WIDTH = 1200;
+    const int WINDOW_HEIGHT = 800;
+    const int TARGET_FPS = 60;
+};
 
 class Application
 {
@@ -24,49 +22,35 @@ public:
 public:
     void run();
 
-public:
+private:
+    void init() const;
+
+private:
     void handleInput();
-    void drawUI();
-    void handleListView();
     void handleBackToDataInput();
     void handleSavedUserInfo();
-    void handleDeleteUserInfo();
+    void handleListView();
     void handleHomeButtons();
     void handleHideSavedUser();
+    void handleDeleteUserInfo();
+    void processData(const std::string& inputInfo);
 
 private:
-    void m_initializeWindow() const;
-    std::tuple<Font, Font, Font> m_loadFonts() const;
-
-private:
-    bool m_handleUserInput(char* info);
-    void m_processData(ShutdownInfo& request, const std::string& inputInfo);
-    void m_drawCircles(const ShutdownInfo& request, const Font& font) const;
-
-private:
-    ShutdownInfo m_request;
+    bool m_isAddressEntered;
+    bool m_isAddressSent;
+    bool m_isDataProcessed;
+    bool m_isDataListDisplayed;
+    int m_DataListCurrentActive;
     char m_info[256];
 
-private:
-    int m_userChoiceIndex;
-
-    bool m_addressEntered;
-    bool m_addressSent;
-    bool m_dataProcessed = false;
-    bool m_displayListView = false;
-    int m_listViewActive = -1;
-
     std::string m_errorMessage;
-
-private:
-    Font m_defaultFont;
-    Font m_discoveryFont;
-    Font m_lexendFont;
-
-private:
-    DatabaseManager m_dbManager;
-
     std::vector<std::string> m_allUserInfo;
     std::string m_allUserInfoStr;
+
+private:
+    UIManager m_uiManager;
+    ShutdownInfo m_request;
+
+    DatabaseManager m_dbManager;
 
 };

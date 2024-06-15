@@ -55,7 +55,7 @@ std::string ShutdownInfo::send()
     curl = curl_easy_init();
     if(!curl)
     {
-        throw std::runtime_error("Failed to initialize curl");
+        throw std::runtime_error("Failed to init curl");
     }
 
     curl_easy_setopt(curl, CURLOPT_URL, m_url.c_str());

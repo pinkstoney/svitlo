@@ -14,7 +14,7 @@ DatabaseManager::~DatabaseManager()
         sqlite3_close(m_db);
 }
 
-void DatabaseManager::initialize()
+void DatabaseManager::init()
 {
     if (int rc = sqlite3_open(m_dbPath.c_str(), &m_db); rc)
     {
@@ -41,6 +41,7 @@ void DatabaseManager::executeSql(const std::string& sql, int (*callback)(void*, 
         std::cerr << "Error: Failed to execute SQL statement. " << errMsg << std::endl;
         sqlite3_free(errMsg);
     }
+
 }
 
 void DatabaseManager::setHomeUserInfo(const std::string& info)
@@ -84,8 +85,12 @@ void DatabaseManager::saveUserInfo(const std::string& info)
         return;
     }
 
-    std::string sql = "INSERT INTO UserInfo (INFO) VALUES ('" + info + "');";
-    executeSql(sql, nullptr, nullptr);
+    if (!isUserInfoExist(info))
+    {
+        std::string sql = "INSERT INTO UserInfo (INFO) VALUES ('" + info + "');";
+        executeSql(sql, nullptr, nullptr);
+    }
+
 }
 
 std::string DatabaseManager::getUserInfo(int id)
@@ -106,7 +111,7 @@ std::string DatabaseManager::getUserInfo(int id)
     return info;
 }
 
-bool DatabaseManager::userInfoExist(const std::string& info)
+bool DatabaseManager::isUserInfoExist(const std::string& info)
 {
     std::string sql = "SELECT EXISTS(SELECT 1 FROM UserInfo WHERE INFO='" + info + "');";
 
