@@ -26,6 +26,9 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
     endif()
 endif()
 
+# Add this before your add_executable
+find_package(fmt)
+
 add_executable(svitlo main.cpp
         src/shutdown-info.cpp
         include/shutdown-info.h
@@ -40,7 +43,11 @@ add_executable(svitlo main.cpp
         include/database-manager.h
         include/ui-manager.h
         src/ui-manager.cpp
+        include/electricity-data.h
+        src/electricity-data.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)
-target_link_libraries(svitlo ${CURL_LIBRARIES} raylib SQLite::SQLite3)  # Add SQLite3 here
+
+# Add fmt::fmt to your target_link_libraries
+target_link_libraries(svitlo ${CURL_LIBRARIES} raylib SQLite::SQLite3 fmt::fmt)  # Add SQLite3 here

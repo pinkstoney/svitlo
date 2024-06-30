@@ -10,13 +10,14 @@ UIManager::~UIManager()
 
 void UIManager::drawCircles(const ShutdownInfo& request, const Font& font) const
 {
-
     DrawText("Today", 100, 100, 50, BLACK);
-    ShutdownCircle circleToday({300, 450}, 270, 100, request.getWillBeElectricityToday(), request.getMightBeElectricityToday(), request.getWontBeElectricityToday(), font, request.getQueue(), request.getSubqueue());
+    ElectricityData dataToday(request.getWillBeElectricityToday(), request.getMightBeElectricityToday(), request.getWontBeElectricityToday(), request.getQueue(), request.getSubqueue());
+    ShutdownCircle circleToday({300, 450}, 270, 100, dataToday, font);
     circleToday.drawHourSegments();
 
     DrawText("Tomorrow", 850, 100, 50, BLACK);
-    ShutdownCircle circleTomorrow({900, 450}, 270, 100, request.getWillBeElectricityTomorrow(), request.getMightBeElectricityTomorrow(), request.getWontBeElectricityTomorrow(), font, request.getQueue(), request.getSubqueue());
+    ElectricityData dataTomorrow(request.getWillBeElectricityTomorrow(), request.getMightBeElectricityTomorrow(), request.getWontBeElectricityTomorrow(), request.getQueue(), request.getSubqueue());
+    ShutdownCircle circleTomorrow({900, 450}, 270, 100, dataTomorrow, font);
     circleTomorrow.drawHourSegments();
 }
 
