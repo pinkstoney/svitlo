@@ -16,6 +16,8 @@ public:
     ~ShutdownInfo();
 
 public:
+    bool isInternetConnected() const;
+
     void addHeader(const std::string& header);
     void setPostData(const std::string& choice, const std::string& info);
     std::string send();
@@ -33,8 +35,14 @@ public:
     const std::vector<std::pair<int, int>>& getMightBeElectricityTomorrow() const;
     const std::vector<std::pair<int, int>>& getWontBeElectricityTomorrow() const;
 
+    void addWillBeElectricityToday(int hour);
+    void addMightBeElectricityToday(int hour);
+    void addWontBeElectricityToday(int hour);
+
     int getQueue() const { return m_queue; }
     int getSubqueue() const { return m_subqueue; }
+    void setSubqueue(int subqueue);
+    void setQueue(int queue);
 
 private:
     static bool s_curlInitialized;
@@ -58,4 +66,5 @@ private:
     std::vector<std::pair<int, int>> m_willBeElectricityTomorrow;
     std::vector<std::pair<int, int>> m_mightBeElectricityTomorrow;
     std::vector<std::pair<int, int>> m_wontBeElectricityTomorrow;
+
 };

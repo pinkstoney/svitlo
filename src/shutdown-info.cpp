@@ -126,8 +126,8 @@ void ShutdownInfo::formatElectricityData(const std::string& rawData)
     }
 
 
-    if (!data["graphs"].contains("today"))
-        throw std::runtime_error("The data does not contain information for today.");
+    if (!data["graphs"].contains("today") && !data["graphs"].contains("tomorrow"))
+        throw std::runtime_error("The data does not contain information for today/tommorw.");
 
     m_queue = data["current"]["queue"];
     m_subqueue = data["current"]["subqueue"];
@@ -180,4 +180,47 @@ const std::vector<std::pair<int, int>>& ShutdownInfo::getMightBeElectricityTomor
 const std::vector<std::pair<int, int>>& ShutdownInfo::getWontBeElectricityTomorrow() const
 {
     return m_wontBeElectricityTomorrow;
+}
+
+void ShutdownInfo::addWillBeElectricityToday(int hour)
+{
+    m_willBeElectricityToday.emplace_back(hour, hour + 1);
+}
+
+void ShutdownInfo::addMightBeElectricityToday(int hour)
+{
+    m_mightBeElectricityToday.emplace_back(hour, hour + 1);
+}
+
+void ShutdownInfo::addWontBeElectricityToday(int hour)
+{
+    m_wontBeElectricityToday.emplace_back(hour, hour + 1);
+}
+
+bool ShutdownInfo::isInternetConnected() const
+{
+    CURL *curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    if(curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://www.google.com");
+        curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L); // Set timeout to 10 seconds
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        return (res == CURLE_OK);
+    }
+    return false;
+}
+
+void ShutdownInfo::setQueue(int queue)
+{
+    m_queue = queue;
+}
+
+void ShutdownInfo::setSubqueue(int subqueue)
+{
+    m_subqueue = subqueue;
 }

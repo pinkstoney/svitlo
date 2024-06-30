@@ -45,22 +45,25 @@ Color ShutdownCircle::m_determineColor(int i)
     Color red = { 238, 78, 78, 255 };
     Color orange = { 253, 208, 157, 255 };
 
-    auto willBe = std::find_if(m_willBeElectricity.begin(), m_willBeElectricity.end(), [i](const std::pair<int, int>& p)
+    int hour = (i + 1) % 24;
+    if (hour == 0) hour = 24;
+
+    auto willBe = std::find_if(m_willBeElectricity.begin(), m_willBeElectricity.end(), [hour](const std::pair<int, int>& p)
     {
-        if (p.first <= p.second) return p.first <= i && i < p.second;
-        else return i < p.second || i >= p.first;
+        if (p.first <= p.second) return p.first <= hour && hour < p.second;
+        else return hour < p.second || p.first <= hour;
     });
 
-    auto mightBe = std::find_if(m_mightBeElectricity.begin(), m_mightBeElectricity.end(), [i](const std::pair<int, int>& p)
+    auto mightBe = std::find_if(m_mightBeElectricity.begin(), m_mightBeElectricity.end(), [hour](const std::pair<int, int>& p)
     {
-        if (p.first <= p.second) return p.first <= i && i < p.second;
-        else return i < p.second || i >= p.first;
+        if (p.first <= p.second) return p.first <= hour && hour < p.second;
+        else return hour < p.second || p.first <= hour;
     });
 
-    auto wontBe = std::find_if(m_wontBeElectricity.begin(), m_wontBeElectricity.end(), [i](const std::pair<int, int>& p)
+    auto wontBe = std::find_if(m_wontBeElectricity.begin(), m_wontBeElectricity.end(), [hour](const std::pair<int, int>& p)
     {
-        if (p.first <= p.second) return p.first <= i && i < p.second;
-        else return i < p.second || i >= p.first;
+        if (p.first <= p.second) return p.first <= hour && hour < p.second;
+        else return hour < p.second || p.first <= hour;
     });
 
     if (willBe != m_willBeElectricity.end())

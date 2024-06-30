@@ -1,5 +1,7 @@
 #pragma once
 
+#include <thread>
+
 #include "raygui.h"
 
 #include "ui-manager.h"
@@ -13,8 +15,7 @@ struct ApplicationSpecification
     const int TARGET_FPS = 60;
 };
 
-class Application
-{
+class Application {
 public:
     Application();
     ~Application();
@@ -23,17 +24,23 @@ public:
     void run();
 
 private:
-    void init() const;
+    void m_initializeWindow() const;
+    void m_loadUserHomeInfo();
+    void m_displayInputScreen();
+    void m_displayDataScreen();
+    void m_processInput();
+    void m_processBackToInputScreen();
+    void m_processSavedUserInfo();
+    void m_displaySavedUserInfoList();
+    void m_processHomeButtons();
+    void m_processHideSavedUserButton();
+    void m_processDeleteUserInfo();
+    void processData(const std::string& inputInfo);
 
 private:
-    void handleInput();
-    void handleBackToDataInput();
-    void handleSavedUserInfo();
-    void handleListView();
-    void handleHomeButtons();
-    void handleHideSavedUser();
-    void handleDeleteUserInfo();
-    void processData(const std::string& inputInfo);
+    UIManager m_uiManager;
+    DatabaseManager m_dbManager;
+    ShutdownInfo m_request;
 
 private:
     bool m_isAddressEntered;
@@ -41,16 +48,13 @@ private:
     bool m_isDataProcessed;
     bool m_isDataListDisplayed;
     int m_DataListCurrentActive;
-    char m_info[256];
-
-    std::string m_errorMessage;
-    std::vector<std::string> m_allUserInfo;
-    std::string m_allUserInfoStr;
+    bool m_isInternetConnected;
 
 private:
-    UIManager m_uiManager;
-    ShutdownInfo m_request;
+    char m_info[256];
+    std::string m_errorMessage;
+    std::vector<std::pair<std::string, std::string>> m_allUserInfo;;
+    std::string m_allUserInfoStr;
 
-    DatabaseManager m_dbManager;
-
+    void m_displayNoInternetScreen();
 };

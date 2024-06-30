@@ -2,6 +2,9 @@
 
 #include <string>
 #include <vector>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 #include <sqlite3.h>
 
@@ -23,11 +26,14 @@ public:
     void deleteUserInfo(const std::string& info);
 
     std::string getUserInfo(int id);
-    std::vector<std::string> getAllUserInfo();
+    std::vector<std::pair<std::string, std::string>> getAllUserInfo();
     std::string getHomeUserInfo();
 
     void setHomeUserInfo(const std::string &info);
     void removeHomeUserInfo();
+
+    void saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue);
+    std::vector<std::tuple<std::string, int, int, int, int>> getElectricityInfo(const std::string& info, const std::string& date);
 
 private:
     std::string m_dbPath;

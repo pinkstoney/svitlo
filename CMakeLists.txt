@@ -38,6 +38,8 @@ add_executable(svitlo main.cpp
         libs/raygui.cpp
         src/database-manager.cpp
         include/database-manager.h
+        include/ui-manager.h
+        src/ui-manager.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)

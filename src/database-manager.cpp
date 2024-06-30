@@ -26,7 +26,19 @@ void DatabaseManager::init()
         std::string sql = "CREATE TABLE IF NOT EXISTS UserInfo("
                           "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
                           "INFO TEXT NOT NULL,"
-                          "IS_HOME INTEGER DEFAULT 0);";
+                          "IS_HOME INTEGER DEFAULT 0,"
+                          "SAVED_TIME TEXT);";
+
+        executeSql(sql, nullptr, nullptr);
+
+        sql = "CREATE TABLE IF NOT EXISTS ElectricityInfo("
+              "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+              "INFO TEXT NOT NULL,"
+              "DATE TEXT,"
+              "HOUR INTEGER,"
+              "STATUS INTEGER,"
+              "QUEUE INTEGER,"
+              "SUBQUEUE INTEGER);";
 
         executeSql(sql, nullptr, nullptr);
     }
@@ -85,12 +97,19 @@ void DatabaseManager::saveUserInfo(const std::string& info)
         return;
     }
 
-    if (!isUserInfoExist(info))
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&now_c), "%F %T");
+
+    if (isUserInfoExist(info))
     {
-        std::string sql = "INSERT INTO UserInfo (INFO) VALUES ('" + info + "');";
+        std::string sql = "DELETE FROM UserInfo WHERE INFO='" + info + "';";
         executeSql(sql, nullptr, nullptr);
     }
 
+    std::string sql = "INSERT INTO UserInfo (INFO, SAVED_TIME) VALUES ('" + info + "', '" + ss.str() + "');";
+    executeSql(sql, nullptr, nullptr);
 }
 
 std::string DatabaseManager::getUserInfo(int id)
@@ -129,17 +148,17 @@ bool DatabaseManager::isUserInfoExist(const std::string& info)
     return exists == 1;
 }
 
-std::vector<std::string> DatabaseManager::getAllUserInfo()
+std::vector<std::pair<std::string, std::string>> DatabaseManager::getAllUserInfo()
 {
-    std::string sql = "SELECT INFO FROM UserInfo;";
+    std::string sql = "SELECT INFO, SAVED_TIME FROM UserInfo;";
 
-    std::vector<std::string> allInfo;
+    std::vector<std::pair<std::string, std::string>> allInfo;
 
     auto callback = [](void *data, int argc, char **argv, char ** /*azColName*/)
     {
-        auto allInfoPtr = static_cast<std::vector<std::string>*>(data);
-        if (argc > 0 && argv[0])
-            allInfoPtr->emplace_back(argv[0]);
+        auto allInfoPtr = static_cast<std::vector<std::pair<std::string, std::string>>*>(data);
+        if (argc > 1 && argv[0] && argv[1])
+            allInfoPtr->emplace_back(std::make_pair(argv[0], argv[1]));
         return 0;
     };
 
@@ -169,4 +188,67 @@ bool DatabaseManager::isDatabaseEmpty()
 
     executeSql(sql, callback, &count);
     return count == 0;
+}
+void DatabaseManager::saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue)
+{
+    std::string sql = "SELECT EXISTS(SELECT 1 FROM ElectricityInfo WHERE INFO='" + info + "' AND HOUR=" + std::to_string(hour) + ");";
+
+    int exists = 0;
+
+    auto callback = [](void *data, int argc, char **argv, char ** /*azColName*/)
+    {
+        auto existsPtr = static_cast<int*>(data);
+        if (argc > 0 && argv[0])
+            *existsPtr = std::stoi(argv[0]);
+        return 0;
+    };
+
+    executeSql(sql, callback, &exists);
+
+    if (exists == 1)
+    {
+        sql = "UPDATE ElectricityInfo SET DATE='" + date + "', STATUS=" + std::to_string(status) + ", QUEUE=" + std::to_string(queue) + ", SUBQUEUE=" + std::to_string(subqueue) + " WHERE INFO='" + info + "' AND HOUR=" + std::to_string(hour) + ";";
+    }
+    else
+    {
+        sql = "INSERT INTO ElectricityInfo (INFO, DATE, HOUR, STATUS, QUEUE, SUBQUEUE) VALUES ('" + info + "', '" + date + "', " + std::to_string(hour) + ", " + std::to_string(status) + ", " + std::to_string(queue) + ", " + std::to_string(subqueue) + ");";
+    }
+
+    executeSql(sql, nullptr, nullptr);
+}
+
+std::vector<std::tuple<std::string, int, int, int, int>> DatabaseManager::getElectricityInfo(const std::string& info, const std::string& date)
+{
+    std::cout << "INFO: " << info << std::endl;
+    std::cout << "DATE: " << date << std::endl;
+
+    std::string sql = "SELECT INFO, HOUR, STATUS, QUEUE, SUBQUEUE FROM ElectricityInfo WHERE INFO='" + info + "';";
+    std::cout << "Executing SQL: " << sql << std::endl;
+
+    std::vector<std::tuple<std::string, int, int, int, int>> electricityInfo;
+
+    auto callback = [](void *data, int argc, char **argv, char ** /*azColName*/)
+    {
+        auto electricityInfoPtr = static_cast<std::vector<std::tuple<std::string, int, int, int, int>>*>(data);
+        if (argc == 5 && argv[0] && argv[1] && argv[2] && argv[3] && argv[4])
+        {
+            std::string info = argv[0];
+            int hour = std::stoi(argv[1]);
+            int status = std::stoi(argv[2]);
+            int queue = std::stoi(argv[3]);
+            int subqueue = std::stoi(argv[4]);
+            electricityInfoPtr->emplace_back(info, hour, status, queue, subqueue);
+        }
+        return 0;
+    };
+
+    executeSql(sql, callback, &electricityInfo);
+
+    std::cout << "Query Results: " << std::endl;
+    for (const auto& entry : electricityInfo)
+    {
+        std::cout << "Info: " << std::get<0>(entry) << ", Hour: " << std::get<1>(entry) << ", Status: " << std::get<2>(entry) << ", Queue: " << std::get<3>(entry) << ", Subqueue: " << std::get<4>(entry) << std::endl;
+    }
+
+    return electricityInfo;
 }
