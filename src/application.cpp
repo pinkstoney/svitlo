@@ -7,7 +7,6 @@ Application::Application()
           m_isDataProcessed(false), m_isDataListDisplayed(false), m_DataListCurrentActive(-1) {
     m_initializeWindow();
 
-    m_dbManager.init();
     m_uiManager.loadFonts();
 
     memset(m_info, 0, sizeof(m_info));
@@ -29,8 +28,8 @@ void Application::run()
 {
     m_loadUserHomeInfo();
 
-    m_isInternetConnected = m_request.isInternetConnected();
-    //m_isInternetConnected = false;
+    //m_isInternetConnected = m_request.isInternetConnected();
+    m_isInternetConnected = false;
 
     while (!WindowShouldClose())
     {
@@ -238,7 +237,7 @@ void Application::processData(const std::string &inputInfo)
         {
             std::stringstream ss;
 
-            auto electricityInfo = m_dbManager.getElectricityInfo(inputInfo, ss.str());
+            auto electricityInfo = m_dbManager.getElectricityInfo(inputInfo);
             if (!electricityInfo.empty())
             {
                 for (const auto &info: electricityInfo)

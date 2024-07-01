@@ -1,9 +1,5 @@
 #include "../include/shutdown-circle.h"
 
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
-
 constexpr float ANGLE_PER_HOUR = 360.0f / 24.0f;
 constexpr Color CUSTOM_GREEN = {161, 221, 112, 255};
 constexpr Color CUSTOM_RED = {238, 78, 78, 255};

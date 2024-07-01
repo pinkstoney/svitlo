@@ -4,6 +4,9 @@
 #include <utility>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
 
 #include "circle.h"
 #include "electricity-data.h"
