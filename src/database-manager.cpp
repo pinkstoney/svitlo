@@ -1,15 +1,16 @@
 #include "../include/database-manager.h"
 
 DatabaseManager::DatabaseManager(std::string dbPath) 
-    : m_dbPath(std::move(dbPath)), m_db(nullptr, sqlite3_close) {
+    : m_dbPath(std::move(dbPath)), m_db(nullptr, sqlite3_close)
+{
     initDatabase();
 }
 
-void DatabaseManager::initDatabase() {
+void DatabaseManager::initDatabase() 
+{
     sqlite3* db;
-    if (sqlite3_open(m_dbPath.c_str(), &db) != SQLITE_OK) {
+    if (sqlite3_open(m_dbPath.c_str(), &db) != SQLITE_OK) 
         throw std::runtime_error("Failed to open database: " + std::string(sqlite3_errmsg(db)));
-    }
     m_db.reset(db);
 
     const char* userInfoSql = R"(
