@@ -51,6 +51,8 @@ bool ShutdownCircle::m_isHourInPeriod(int hour, const std::pair<int, int>& perio
            : hour < period.second || period.first <= hour;
 }
 
+
+
 bool ShutdownCircle::m_isColorForHour(int hour, const std::vector<std::pair<int, int>>& periods) const
 {
     return std::any_of(periods.begin(), periods.end(), [hour, this](const std::pair<int, int>& p)

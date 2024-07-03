@@ -9,6 +9,7 @@ size_t ShutdownInfo::m_writeCallback(void* contents, size_t size, size_t nmemb, 
 }
 
 bool ShutdownInfo::s_curlInitialized = false;
+
 curl_slist* ShutdownInfo::s_headers = nullptr;
 
 ShutdownInfo::ShutdownInfo()

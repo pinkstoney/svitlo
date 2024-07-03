@@ -28,8 +28,8 @@ void Application::run()
 {
     m_loadUserHomeInfo();
 
-    //m_isInternetConnected = m_request.isInternetConnected();
-    m_isInternetConnected = false;
+    m_isInternetConnected = m_request.isInternetConnected();
+    //m_isInternetConnected = false;
 
     while (!WindowShouldClose())
     {

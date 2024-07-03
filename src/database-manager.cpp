@@ -1,18 +1,15 @@
 #include "../include/database-manager.h"
 
-DatabaseManager::DatabaseManager(std::string dbPath)
-        : m_dbPath(std::move(dbPath)), m_db(nullptr, sqlite3_close)
-{
-    init();
+DatabaseManager::DatabaseManager(std::string dbPath) 
+    : m_dbPath(std::move(dbPath)), m_db(nullptr, sqlite3_close) {
+    initDatabase();
 }
 
-DatabaseManager::~DatabaseManager() noexcept = default;
-
-void DatabaseManager::init()
-{
+void DatabaseManager::initDatabase() {
     sqlite3* db;
-    if (int rc = sqlite3_open(m_dbPath.c_str(), &db); rc != SQLITE_OK)
+    if (sqlite3_open(m_dbPath.c_str(), &db) != SQLITE_OK) {
         throw std::runtime_error("Failed to open database: " + std::string(sqlite3_errmsg(db)));
+    }
     m_db.reset(db);
 
     const char* userInfoSql = R"(
@@ -36,221 +33,186 @@ void DatabaseManager::init()
         )
     )";
 
-    m_executeSql(userInfoSql, nullptr, nullptr);
-    m_executeSql(electricityInfoSql, nullptr, nullptr);
+    executeSql(userInfoSql);
+    executeSql(electricityInfoSql);
 }
 
-void DatabaseManager::m_executeSql(const std::string& sql, const std::function<int(void*, int, char**, char**)>& callback, void* userData) const
+void DatabaseManager::executeSql(const std::string& sql, 
+                                 const std::vector<std::string>& params,
+                                 const std::function<void(sqlite3_stmt*)>& rowCallback) const 
 {
-    char* errMsg = nullptr;
+    sqlite3_stmt* stmt = nullptr;
+    
+    if (sqlite3_prepare_v2(m_db.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+        throw std::runtime_error("Failed to prepare statement: " + std::string(sqlite3_errmsg(m_db.get())));
+
+    auto guard = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>(stmt, sqlite3_finalize);
+
+    for (size_t i = 0; i < params.size(); ++i) 
+    {
+        if (sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) 
+            throw std::runtime_error("Failed to bind parameter " + std::to_string(i + 1) + ": " + 
+                                     std::string(sqlite3_errmsg(m_db.get())));
+    }
+
     int rc;
-
-    auto wrapperCallback = [](void* data, int argc, char** argv, char** azColName)
+    while ((rc = sqlite3_step(stmt)) == SQLITE_ROW) 
     {
-        auto* params = static_cast<std::pair<const std::function<int(void*, int, char**, char**)>*, void*>*>(data);
-        return (*(params->first))(params->second, argc, argv, azColName);
-    };
-
-    if (callback)
-    {
-        auto params = std::make_pair(&callback, userData);
-        rc = sqlite3_exec(m_db.get(), sql.c_str(), wrapperCallback, &params, &errMsg);
-    }
-    else
-    {
-        rc = sqlite3_exec(m_db.get(), sql.c_str(), nullptr, userData, &errMsg);
+        if (rowCallback) 
+            rowCallback(stmt);
     }
 
-    if (rc != SQLITE_OK)
-    {
-        std::string error = errMsg ? errMsg : "Unknown error";
-        sqlite3_free(errMsg);
-        throw std::runtime_error("SQL error: " + error);
-    }
+    if (rc != SQLITE_DONE) 
+        throw std::runtime_error("Error executing statement: " + std::string(sqlite3_errmsg(m_db.get())));
 }
 
-void DatabaseManager::m_prepareAndExecute(const std::string& sql, const std::vector<std::string>& params) const
+void DatabaseManager::prepareAndExecute(const std::string& sql, const std::vector<std::string>& params) const
 {
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(m_db.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         throw std::runtime_error("Failed to prepare statement: " + std::string(sqlite3_errmsg(m_db.get())));
 
-    for (size_t i = 0; i < params.size(); ++i)
+    auto guard = std::unique_ptr<sqlite3_stmt, decltype(&sqlite3_finalize)>(stmt, sqlite3_finalize);
+
+    for (size_t i = 0; i < params.size(); ++i) 
     {
-        if (sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK)
-        {
-            sqlite3_finalize(stmt);
+        if (sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_TRANSIENT) != SQLITE_OK) 
             throw std::runtime_error("Failed to bind parameter: " + std::string(sqlite3_errmsg(m_db.get())));
-        }
     }
 
-    if (sqlite3_step(stmt) != SQLITE_DONE)
-    {
-        sqlite3_finalize(stmt);
+    if (sqlite3_step(stmt) != SQLITE_DONE) 
         throw std::runtime_error("Failed to execute statement: " + std::string(sqlite3_errmsg(m_db.get())));
-    }
-
-    sqlite3_finalize(stmt);
 }
 
-void DatabaseManager::setHomeUserInfo(const std::string& info) const
+void DatabaseManager::setHomeUserInfo(const std::string& info) 
 {
-    m_prepareAndExecute("UPDATE UserInfo SET IS_HOME = 0", {});
-    m_prepareAndExecute("UPDATE UserInfo SET IS_HOME = 1 WHERE INFO = ?", {info});
+    executeSql("UPDATE UserInfo SET IS_HOME = 0");
+    prepareAndExecute("UPDATE UserInfo SET IS_HOME = 1 WHERE INFO = ?", {info});
 }
 
-void DatabaseManager::removeHomeUserInfo() const
+void DatabaseManager::removeHomeUserInfo() 
 {
-    m_prepareAndExecute("UPDATE UserInfo SET IS_HOME = 0", {});
+    executeSql("UPDATE UserInfo SET IS_HOME = 0");
 }
 
-std::string DatabaseManager::getHomeUserInfo() const
+std::string DatabaseManager::getHomeUserInfo() const 
 {
     std::string info;
-    m_executeSql("SELECT INFO FROM UserInfo WHERE IS_HOME = 1",
-               [](void* data, int argc, char** argv, char**)
-               {
-                   if (argc > 0 && argv[0])
-                   {
-                       *static_cast<std::string*>(data) = argv[0];
-                   }
-                   return 0;
-               }, &info);
+    executeSql("SELECT INFO FROM UserInfo WHERE IS_HOME = 1", {}, [&info](sqlite3_stmt* stmt) 
+    {
+        info = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+    });
     return info;
 }
 
-void DatabaseManager::saveUserInfo(const std::string& info) const
+void DatabaseManager::saveUserInfo(const std::string& info)
 {
-    if (info.empty())
+    if (info.empty()) 
         throw std::invalid_argument("User info is empty.");
+    
 
     auto now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+    auto now_c = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
     std::tm tm = {};
     localtime_r(&now_c, &tm);
     ss << std::put_time(&tm, "%F %T");
 
-    if (isUserInfoExist(info))
-        m_prepareAndExecute("DELETE FROM UserInfo WHERE INFO = ?", {info});
-
-    m_prepareAndExecute("INSERT INTO UserInfo (INFO, SAVED_TIME) VALUES (?, ?)", {info, ss.str()});
+    if (isUserInfoExist(info)) 
+        prepareAndExecute("UPDATE UserInfo SET SAVED_TIME = ? WHERE INFO = ?", {ss.str(), info});
+    else
+        prepareAndExecute("INSERT INTO UserInfo (INFO, SAVED_TIME) VALUES (?, ?)", {info, ss.str()});
 }
 
-std::string DatabaseManager::getUserInfo(int id) const
-{
-    std::string info;
-    m_executeSql("SELECT INFO FROM UserInfo WHERE ID = " + std::to_string(id),
-               [](void* data, int argc, char** argv, char**)
-               {
-                   if (argc > 0 && argv[0])
-                   {
-                       *static_cast<std::string*>(data) = argv[0];
-                   }
-                   return 0;
-               }, &info);
-    return info;
-}
-
-
-bool DatabaseManager::isUserInfoExist(const std::string& info) const
-{
-    int exists = 0;
-    std::string sql = "SELECT EXISTS(SELECT 1 FROM UserInfo WHERE INFO='" + info + "');";
-    auto callback = [](void* data, int argc, char** argv, char**)
-    {
-        if (argc > 0 && argv[0])
-        {
-            *static_cast<int*>(data) = std::stoi(argv[0]);
-        }
-        return 0;
-    };
-    m_executeSql(sql, callback, &exists);
-
-    return exists == 1;
-}
-
-std::vector<std::pair<std::string, std::string>> DatabaseManager::getAllUserInfo() const
+std::vector<std::pair<std::string, std::string>> DatabaseManager::getAllUserInfo() const 
 {
     std::vector<std::pair<std::string, std::string>> allInfo;
-    std::string sql = "SELECT INFO, SAVED_TIME FROM UserInfo;";
-    auto callback = [](void* data, int argc, char** argv, char**)
+    executeSql("SELECT INFO, SAVED_TIME FROM UserInfo", {}, [&allInfo](sqlite3_stmt* stmt) 
     {
-        auto allInfoPtr = static_cast<std::vector<std::pair<std::string, std::string>>*>(data);
-        if (argc > 1 && argv[0] && argv[1])
-        {
-            allInfoPtr->emplace_back(argv[0], argv[1]);
-        }
-        return 0;
-    };
-    m_executeSql(sql, callback, &allInfo);
-
+        allInfo.emplace_back(
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)),
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1))
+        );
+    });
     return allInfo;
 }
 
-void DatabaseManager::deleteUserInfo(const std::string& info) const
+std::string DatabaseManager::getUserInfo(int id) const 
 {
-    m_prepareAndExecute("DELETE FROM UserInfo WHERE INFO = ?", {info});
+    std::string info;
+    executeSql("SELECT INFO FROM UserInfo WHERE ID = ?", {std::to_string(id)}, [&info](sqlite3_stmt* stmt) 
+    {
+        info = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+    });
+    return info;
 }
 
-bool DatabaseManager::isDatabaseEmpty() const
+bool DatabaseManager::isUserInfoExist(const std::string& info) const 
+{
+    int exists = 0;
+    executeSql("SELECT EXISTS(SELECT 1 FROM UserInfo WHERE INFO = ?)", {info}, [&exists](sqlite3_stmt* stmt) 
+    {
+        exists = sqlite3_column_int(stmt, 0);
+    });
+    return exists == 1;
+}
+
+void DatabaseManager::deleteUserInfo(const std::string& info) 
+{
+    prepareAndExecute("DELETE FROM UserInfo WHERE INFO = ?", {info});
+}
+
+bool DatabaseManager::isDatabaseEmpty() const 
 {
     int count = 0;
-    m_executeSql("SELECT COUNT(*) FROM UserInfo",
-               [](void* data, int argc, char** argv, char**)
-               {
-                   if (argc > 0 && argv[0])
-                   {
-                       *static_cast<int*>(data) = std::stoi(argv[0]);
-                   }
-                   return 0;
-               }, &count);
-
+    executeSql("SELECT COUNT(*) FROM UserInfo", {}, [&count](sqlite3_stmt* stmt) 
+    {
+        count = sqlite3_column_int(stmt, 0);
+    });
     return count == 0;
 }
 
-void DatabaseManager::saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue) const
+void DatabaseManager::saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue) 
 {
     int exists = 0;
-    m_executeSql("SELECT EXISTS(SELECT 1 FROM ElectricityInfo WHERE INFO = ? AND HOUR = ?)",
-               [](void* data, int argc, char** argv, char**)
-               {
-                   if (argc > 0 && argv[0])
-                   {
-                       *static_cast<int*>(data) = std::stoi(argv[0]);
-                   }
-                   return 0;
-               }, &exists);
+    executeSql("SELECT EXISTS(SELECT 1 FROM ElectricityInfo WHERE INFO = ? AND HOUR = ?)", 
+               {info, std::to_string(hour)}, 
+               [&exists](sqlite3_stmt* stmt) 
+    {
+        exists = sqlite3_column_int(stmt, 0);
+    });
 
-    if (exists == 1)
+    if (exists == 1) 
     {
-        m_prepareAndExecute(
-                "UPDATE ElectricityInfo SET DATE = ?, STATUS = ?, QUEUE = ?, SUBQUEUE = ? WHERE INFO = ? AND HOUR = ?",
-                {date, std::to_string(status), std::to_string(queue), std::to_string(subqueue), info,
-                 std::to_string(hour)});
-    }
-    else
+        prepareAndExecute(
+            "UPDATE ElectricityInfo SET DATE = ?, STATUS = ?, QUEUE = ?, SUBQUEUE = ? WHERE INFO = ? AND HOUR = ?",
+            {date, std::to_string(status), std::to_string(queue), std::to_string(subqueue), info, std::to_string(hour)}
+        );
+    } 
+    else 
     {
-        m_prepareAndExecute(
-                "INSERT INTO ElectricityInfo (INFO, DATE, HOUR, STATUS, QUEUE, SUBQUEUE) VALUES (?, ?, ?, ?, ?, ?)",
-                {info, date, std::to_string(hour), std::to_string(status), std::to_string(queue),
-                 std::to_string(subqueue)});
+        prepareAndExecute(
+            "INSERT INTO ElectricityInfo (INFO, DATE, HOUR, STATUS, QUEUE, SUBQUEUE) VALUES (?, ?, ?, ?, ?, ?)",
+            {info, date, std::to_string(hour), std::to_string(status), std::to_string(queue), std::to_string(subqueue)}
+        );
     }
 }
 
-
-std::vector<std::tuple<std::string, int, int, int, int>> DatabaseManager::getElectricityInfo(const std::string& info) const
+std::vector<std::tuple<std::string, int, int, int, int>> DatabaseManager::getElectricityInfo(const std::string& info) const 
 {
     std::vector<std::tuple<std::string, int, int, int, int>> electricityInfo;
-    m_executeSql("SELECT DATE, HOUR, STATUS, QUEUE, SUBQUEUE FROM ElectricityInfo WHERE INFO='" + info + "';",
-               [](void* data, int argc, char** argv, char**)
-               {
-                   if (argc == 5 && argv[0] && argv[1] && argv[2] && argv[3] && argv[4])
-                   {
-                       static_cast<std::vector<std::tuple<std::string, int, int, int, int>>*>(data)->emplace_back(
-                               argv[0], std::stoi(argv[1]), std::stoi(argv[2]), std::stoi(argv[3]), std::stoi(argv[4]));
-                   }
-                   return 0;
-               }, &electricityInfo);
+    std::string sql = "SELECT DATE, HOUR, STATUS, QUEUE, SUBQUEUE FROM ElectricityInfo WHERE INFO = ?";
+    
+    executeSql(sql, {info}, [&electricityInfo](sqlite3_stmt* stmt) 
+    {
+        electricityInfo.emplace_back(
+            reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)),
+            sqlite3_column_int(stmt, 1),
+            sqlite3_column_int(stmt, 2),
+            sqlite3_column_int(stmt, 3),
+            sqlite3_column_int(stmt, 4)
+        );
+    });
+    
     return electricityInfo;
 }
