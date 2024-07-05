@@ -39,7 +39,7 @@ bool ShutdownCircle::m_isColorForHour(int hour, const std::vector<std::pair<int,
 
 Color ShutdownCircle::m_determineColor(int i) const
 {
-    int hour = (i + 1) % 24;
+    int hour = (i + 0) % 24;
     hour = hour == 0 ? 24 : hour;
 
     if (m_isColorForHour(hour, m_data.getWillBeElectricity())) return CUSTOM_GREEN;
