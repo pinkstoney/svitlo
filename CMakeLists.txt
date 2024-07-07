@@ -45,6 +45,10 @@ add_executable(svitlo main.cpp
         src/ui-manager.cpp
         include/electricity-data.h
         src/electricity-data.cpp
+        include/state-manager.h
+        src/state-manager.cpp
+        include/utility.h
+        src/utility.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)

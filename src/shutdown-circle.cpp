@@ -1,5 +1,11 @@
 #include "../include/shutdown-circle.h"
+#include "../include/utility.h"
 
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <sstream>
+#include <iomanip>
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -9,11 +15,6 @@ constexpr Color CUSTOM_GREEN = {161, 221, 112, 255};
 constexpr Color CUSTOM_ORANGE = {253, 208, 157, 255};
 constexpr Color CUSTOM_RED = {238, 78, 78, 255};
 constexpr Color DEFAULT_COLOR = LIGHTGRAY;
-
-inline float lerp(float a, float b, float t)
-{
-    return a + t * (b - a);
-}
 
 ShutdownCircle::ShutdownCircle(Vector2 center, float radius, float innerRadius,
                                ElectricityData data, const Font& font)
@@ -90,9 +91,9 @@ void ShutdownCircle::m_updateSegmentSize(int i, const Vector2& mousePosition)
 {
     auto [startAngle, midAngle, endAngle] = calculateAngles(i, ANGLE_PER_HOUR);
     if (isMouseOverSegment(startAngle, endAngle, mousePosition))
-        m_segmentSizes[i] = lerp(m_segmentSizes[i], getRadius() + 20.0f, 0.2f);
+        m_segmentSizes[i] = Utility::lerp(m_segmentSizes[i], getRadius() + 20.0f, 0.2f);
     else
-        m_segmentSizes[i] = lerp(m_segmentSizes[i], getRadius(), 0.1f);
+        m_segmentSizes[i] = Utility::lerp(m_segmentSizes[i], getRadius(), 0.1f);
 }
 
 void ShutdownCircle::m_drawSegmentRing(int i, float startAngle, float midAngle, Color color) const

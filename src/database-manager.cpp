@@ -38,10 +38,22 @@ void DatabaseManager::initDatabase()
     executeSql(electricityInfoSql);
 }
 
+std::string DatabaseManager::constructFinalSql(const std::string& sql, const std::vector<std::string>& params) const {
+    std::string finalSql = sql;
+    for (const auto& param : params) {
+        size_t pos = finalSql.find('?');
+        if (pos != std::string::npos) {
+            finalSql.replace(pos, 1, "'" + param + "'");
+        }
+    }
+    return finalSql;
+}
 void DatabaseManager::executeSql(const std::string& sql, 
                                  const std::vector<std::string>& params,
                                  const std::function<void(sqlite3_stmt*)>& rowCallback) const 
 {
+   // std::cout << constructFinalSql(sql, params) << std::endl;
+
     sqlite3_stmt* stmt = nullptr;
     
     if (sqlite3_prepare_v2(m_db.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
@@ -69,6 +81,8 @@ void DatabaseManager::executeSql(const std::string& sql,
 
 void DatabaseManager::prepareAndExecute(const std::string& sql, const std::vector<std::string>& params) const
 {
+    //std::cout << constructFinalSql(sql, params) << std::endl;
+
     sqlite3_stmt* stmt;
     if (sqlite3_prepare_v2(m_db.get(), sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         throw std::runtime_error("Failed to prepare statement: " + std::string(sqlite3_errmsg(m_db.get())));
@@ -111,7 +125,6 @@ void DatabaseManager::saveUserInfo(const std::string& info)
     if (info.empty()) 
         throw std::invalid_argument("User info is empty.");
     
-
     auto now = std::chrono::system_clock::now();
     auto now_c = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
@@ -161,6 +174,7 @@ bool DatabaseManager::isUserInfoExist(const std::string& info) const
 void DatabaseManager::deleteUserInfo(const std::string& info) 
 {
     prepareAndExecute("DELETE FROM UserInfo WHERE INFO = ?", {info});
+    prepareAndExecute("DELETE FROM ElectricityInfo WHERE INFO = ?", {info});
 }
 
 bool DatabaseManager::isDatabaseEmpty() const 

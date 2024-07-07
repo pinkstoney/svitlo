@@ -37,6 +37,7 @@ public:
 private:
     void initDatabase();
     void executeSql(const std::string& sql, const std::vector<std::string>& params = {}, const std::function<void(sqlite3_stmt*)>& rowCallback = nullptr) const; 
+    std::string constructFinalSql(const std::string& sql, const std::vector<std::string>& params) const; 
     void prepareAndExecute(const std::string& sql, const std::vector<std::string>& params) const;
 
     std::string m_dbPath;

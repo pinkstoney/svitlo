@@ -34,15 +34,25 @@ private:
    //  void m_processInput();
     void m_processBackToInputScreen();
     void m_processSavedUserInfo();
+    void m_displaySavedUserInfo();
+    void m_hideSavedUserInfo();
     void m_displaySavedUserInfoList();
+    void m_handleUserInfoSelection();
     void m_processHomeButtons();
-    void m_processHideSavedUserButton();
     void m_processDeleteUserInfo();
     void processData(const std::string& inputInfo);
 
     void processDataOffline(const std::string &inputInfo); 
     void processDataOnline(const std::string& inputInfo);
 
+    void resetApplicationState();
+    void clearUserInput();
+    
+    bool m_isSavedUserInfoDisplayed = false;
+    void m_toggleSavedUserInfo(bool show);
+    void m_displayErrorMessage();
+    void m_displayDataSavedTime();
+    void m_updateAllUserInfo();
 private:
     UIManager m_uiManager;
     DatabaseManager m_dbManager;
