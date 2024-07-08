@@ -28,8 +28,8 @@ void Application::m_initializeWindow() const
 
 void Application::run() 
 {
-//    m_isInternetConnected = m_request.isInternetConnected();
-    m_isInternetConnected = true; 
+    //m_isInternetConnected = m_request.isInternetConnected();
+    m_isInternetConnected = false; 
     m_loadUserHomeInfo();
 
     while (!WindowShouldClose()) 
@@ -71,17 +71,10 @@ void Application::m_displayInputScreen()
         m_uiManager.drawText("Enter data:", 10, 30, 20, BLACK);
 
        if (m_uiManager.textBox({140, 23, 200, 30}, m_info, sizeof(m_info), true)) 
-       {
-           std::cout << "here";
            m_stateManager.setAddressEntered(true);
-       }
 
         if (IsKeyPressed(KEY_ENTER) && m_stateManager.isAddressEntered()) 
-        {
-            // m_errorMessage.clear();
             processData(std::string(m_info));
-            std::cout << m_errorMessage << "!!!!";
-        }
     }
     m_processSavedUserInfo();
 }
@@ -199,83 +192,37 @@ void Application::m_processDeleteUserInfo()
     }
 }
 
-void Application::processData(const std::string &inputInfo) 
+void Application::setLoadingStrategy(bool isOnline) 
 {
-    if(!m_errorMessage.empty() && !inputInfo.empty())
-    {
-        resetApplicationState();
-    }
+    if (isOnline)
+        m_loadingStrategy = std::make_unique<OnlineLoadingStrategy>();
+    else 
+        m_loadingStrategy = std::make_unique<OfflineLoadingStrategy>();
+    
+}
 
-try 
+void Application::processData(const std::string& inputInfo)
+{
+    if (!m_errorMessage.empty() && !inputInfo.empty())
+        resetApplicationState();
+
+    try
     {
         bool isNumber = std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit);
         std::string userChoice = isNumber ? "accountNumber" : "address";
         m_request.setPostData(userChoice, inputInfo);
 
-        if (m_isInternetConnected)
-            processDataOnline(inputInfo);
-        else
-            processDataOffline(inputInfo);
+        setLoadingStrategy(m_isInternetConnected);
+        m_loadingStrategy->loadData(inputInfo, m_request, m_dbManager);
 
         m_stateManager.setCurrentState(AppState::DISPLAYING_RESULTS);
         m_stateManager.setDataProcessed(true);
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         m_errorMessage = e.what();
         m_stateManager.reset();
     }
-}
-
-void Application::processDataOffline(const std::string &inputInfo) 
-{
-    auto electricityInfo = m_dbManager.getElectricityInfo(inputInfo);
-    if (!electricityInfo.empty()) 
-    {
-        for (const auto &info : electricityInfo) 
-        {
-            int hour = std::get<1>(info);
-            int status = std::get<2>(info);
-            int queue = std::get<3>(info);
-            int subqueue = std::get<4>(info);
-
-            m_request.setQueue(queue);
-            m_request.setSubqueue(subqueue);
-
-            if (status == 1) 
-                m_request.addWillBeElectricityToday(hour);
-            else if (status == 2) 
-                m_request.addMightBeElectricityToday(hour);
-            else if (status == 3) 
-                m_request.addWontBeElectricityToday(hour);
-        }
-    }
-    else
-    {
-        throw std::runtime_error("No saved electricity info found for today");
-    }
-}
-
-void Application::processDataOnline(const std::string& inputInfo)
-{
-   // m_dbManager.saveUserInfo(inputInfo);
-
-    std::string response = m_request.send();
-    m_request.processRawElectricityData(response);
-    m_request.formatElectricityData(response);
-
-    auto currentTime = Utility::getCurrentTime();
-
-    m_dbManager.saveUserInfo(inputInfo);
-
-    for (const auto &hour : m_request.getWillBeElectricityToday()) 
-        m_dbManager.saveElectricityInfo(inputInfo, currentTime, hour.first, 1, m_request.getQueue(), m_request.getSubqueue());
-    
-    for (const auto &hour : m_request.getMightBeElectricityToday()) 
-        m_dbManager.saveElectricityInfo(inputInfo, currentTime, hour.first, 2, m_request.getQueue(), m_request.getSubqueue());
-    
-    for (const auto &hour : m_request.getWontBeElectricityToday()) 
-        m_dbManager.saveElectricityInfo(inputInfo, currentTime, hour.first, 3, m_request.getQueue(), m_request.getSubqueue());
 }
 
 void Application::resetApplicationState()

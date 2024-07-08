@@ -49,6 +49,11 @@ add_executable(svitlo main.cpp
         src/state-manager.cpp
         include/utility.h
         src/utility.cpp
+        include/data-loading-strategy.h
+        include/online-loading-strategy.h
+        src/online-loading-strategy.cpp
+        include/offline-loading-strategy.h
+        src/offline-loading-strategy.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)

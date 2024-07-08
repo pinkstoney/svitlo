@@ -8,6 +8,9 @@
 #include "shutdown-info.h"
 #include "database-manager.h"
 #include "state-manager.h"
+#include "data-loading-strategy.h"
+#include "online-loading-strategy.h"
+#include "offline-loading-strategy.h"
 
 struct ApplicationSpecification
 {
@@ -28,15 +31,17 @@ private:
     void m_initializeWindow() const;
     void m_loadUserHomeInfo();
     void m_processState();
+    void setLoadingStrategy(bool isOnline);
 
     void m_displayInputScreen();
     void m_displayDataScreen();
-   //  void m_processInput();
+
     void m_processBackToInputScreen();
     void m_processSavedUserInfo();
     void m_displaySavedUserInfo();
     void m_hideSavedUserInfo();
     void m_displaySavedUserInfoList();
+
     void m_handleUserInfoSelection();
     void m_processHomeButtons();
     void m_processDeleteUserInfo();
@@ -58,12 +63,9 @@ private:
     DatabaseManager m_dbManager;
     ShutdownInfo m_request;
     StateManager m_stateManager;
+    std::unique_ptr<DataLoadingStrategy> m_loadingStrategy;
 
 private:
-    // bool m_isAddressEntered;
-    // bool m_isAddressSent;
-    // bool m_isDataProcessed;
-    // bool m_isDataListDisplayed;
     int m_DataListCurrentActive = -1;
     bool m_isInternetConnected = false;
 
