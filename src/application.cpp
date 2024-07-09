@@ -6,8 +6,8 @@ const ApplicationSpecification appSpec;
 
 Application::Application()
         : m_uiManager(), m_dbManager("user_info.db"), m_stateManager(),
-          m_isInternetConnected(false), m_isSavedUserInfoDisplayed(false), 
-          m_DataListCurrentActive(-1)
+          m_dataProcessor(m_dbManager), m_isInternetConnected(false),
+          m_isSavedUserInfoDisplayed(false), m_DataListCurrentActive(-1)
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
     m_initializeWindow();
@@ -29,8 +29,8 @@ void Application::m_initializeWindow() const
 
 void Application::run() 
 {
-    m_isInternetConnected = m_stateManager.isInternetConnected();
-    // m_isInternetConnected = true; 
+    //m_isInternetConnected = m_stateManager.isInternetConnected();
+     m_isInternetConnected = false; 
     m_loadUserHomeInfo();
 
     while (!WindowShouldClose()) 
@@ -67,7 +67,7 @@ void Application::m_processState()
 
 void Application::m_displayInputScreen() 
 {
-    m_uiManager.drawInternetStatus(m_stateManager.isInternetConnected());
+    m_uiManager.drawInternetStatus(m_isInternetConnected);
     if (m_isInternetConnected)
     {
        m_uiManager.drawInputPrompt(); 
@@ -76,7 +76,10 @@ void Application::m_displayInputScreen()
            m_stateManager.setAddressEntered(true);
 
         if (IsKeyPressed(KEY_ENTER) && m_stateManager.isAddressEntered()) 
+        {
             processData(std::string(m_info));
+            clearUserInput();
+        }
     }
     m_processSavedUserInfo();
 }
@@ -203,37 +206,28 @@ void Application::setLoadingStrategy(bool isOnline)
 
 void Application::processData(const std::string& inputInfo)
 {
-    if (!m_errorMessage.empty() && !inputInfo.empty())
-        resetApplicationState();
-
-    try
+    m_dataProcessor.processData(inputInfo, m_isInternetConnected);
+    
+    if (m_dataProcessor.getErrorMessage().empty())
     {
-        bool isNumber = std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit);
-        std::string userChoice = isNumber ? "accountNumber" : "address";
-        m_request.setPostData(userChoice, inputInfo);
-
-        setLoadingStrategy(m_isInternetConnected);
-        m_loadingStrategy->loadData(inputInfo, m_request, m_dbManager);
-
         m_stateManager.setCurrentState(AppState::DISPLAYING_RESULTS);
         m_stateManager.setDataProcessed(true);
+        m_request = m_dataProcessor.getProcessedRequest();
     }
-    catch (const std::exception& e)
+    else
     {
-        m_errorMessage = e.what();
-        m_stateManager.reset();
+        m_errorMessage = m_dataProcessor.getErrorMessage();
+        resetApplicationState();
     }
 }
 
 void Application::resetApplicationState()
 {
     m_stateManager.reset();
-    m_errorMessage.clear();
+    m_dataProcessor.reset();
     clearUserInput();
-    m_stateManager.setShutdownInfo(m_request);
     m_request = ShutdownInfo();
     m_isSavedUserInfoDisplayed = false;
-    
 }
 
 void Application::clearUserInput()

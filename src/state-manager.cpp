@@ -10,9 +10,6 @@ std::ostream& operator<<(std::ostream& os, const AppState& state)
         case AppState::DISPLAYING_RESULTS:
             os << "DISPLAYING RESULTS";
             break;
-        case AppState::DISPLAYING_SAVED_INFO:
-            os << "DISPLAYING_SAVED_INFO";
-            break;
         default:
             os << "UNKNOWN";
             break;

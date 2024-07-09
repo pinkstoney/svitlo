@@ -11,6 +11,7 @@
 #include "data-loading-strategy.h"
 #include "online-loading-strategy.h"
 #include "offline-loading-strategy.h"
+#include "data-processor.h"
 
 struct ApplicationSpecification
 {
@@ -66,6 +67,7 @@ private:
     ShutdownInfo m_request;
     StateManager m_stateManager;
     std::unique_ptr<DataLoadingStrategy> m_loadingStrategy;
+    DataProcessor m_dataProcessor;
 
 private:
     int m_DataListCurrentActive = -1;

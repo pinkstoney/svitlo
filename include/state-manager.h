@@ -6,7 +6,6 @@
 enum class AppState {
     INPUT,
     DISPLAYING_RESULTS,
-    DISPLAYING_SAVED_INFO
 };
 
 std::ostream& operator<<(std::ostream& os, const AppState& state);

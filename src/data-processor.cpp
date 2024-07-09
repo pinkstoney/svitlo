@@ -1,100 +1,47 @@
 #include "../include/data-processor.h"
+#include "../include/utility.h"
+#include <algorithm>
 
-DataProcessor::DataProcessor(DatabaseManager& dbManager)
-    : m_dbManager(dbManager), m_isInternetConnected(false) {}
+DataProcessor::DataProcessor(DatabaseManager& dbManager) : m_dbManager(dbManager) {}
 
-void DataProcessor::processData(const std::string& inputInfo, bool isOnline) {
-    m_isInternetConnected = isOnline;
-    
-    if (isOnline) {
-        processDataOnline(inputInfo);
-    } else {
-        processDataOffline(inputInfo);
+void DataProcessor::processData(const std::string& inputInfo, bool isInternetConnected)
+{
+    reset();
+    try
+    {
+        bool isNumber = std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit);
+        std::string userChoice = isNumber ? "accountNumber" : "address";
+        m_request.setPostData(userChoice, inputInfo);
+
+        setLoadingStrategy(isInternetConnected); 
+        m_loadingStrategy->loadData(inputInfo, m_request, m_dbManager);
+    }
+    catch (const std::exception& e)
+    {
+        m_errorMessage = e.what();
     }
 }
 
-ShutdownInfo DataProcessor::getProcessedData() const {
-    return m_shutdownInfo;
+void DataProcessor::setLoadingStrategy(bool isOnline)
+{
+    if (isOnline)
+        m_loadingStrategy = std::make_unique<OnlineLoadingStrategy>();
+    else 
+        m_loadingStrategy = std::make_unique<OfflineLoadingStrategy>();
 }
 
-bool DataProcessor::isInternetConnected() const {
-    return m_isInternetConnected;
+ShutdownInfo DataProcessor::getProcessedRequest() const
+{
+    return m_request;
 }
 
-void DataProcessor::processDataOnline(const std::string& inputInfo) {
-    if (m_dbManager.isUserInfoExist(inputInfo)) 
-        m_dbManager.deleteUserInfo(inputInfo);
-    
-    m_dbManager.saveUserInfo(inputInfo);
-
-    std::string response = m_shutdownInfo.send();
-    m_shutdownInfo.processRawElectricityData(response);
-    m_shutdownInfo.formatElectricityData(response);
-
-    auto now = std::chrono::system_clock::now();
-    std::time_t now_c = std::chrono::system_clock::to_time_t(now);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&now_c), "%F");
-
-    for (const auto &hour : m_shutdownInfo.getWillBeElectricityToday()) 
-        m_dbManager.saveElectricityInfo(inputInfo, ss.str(), hour.first, 1, m_shutdownInfo.getQueue(), m_shutdownInfo.getSubqueue());
-    
-    for (const auto &hour : m_shutdownInfo.getMightBeElectricityToday()) 
-        m_dbManager.saveElectricityInfo(inputInfo, ss.str(), hour.first, 2, m_shutdownInfo.getQueue(), m_shutdownInfo.getSubqueue());
-    
-    for (const auto &hour : m_shutdownInfo.getWontBeElectricityToday()) 
-        m_dbManager.saveElectricityInfo(inputInfo, ss.str(), hour.first, 3, m_shutdownInfo.getQueue(), m_shutdownInfo.getSubqueue());
+std::string DataProcessor::getErrorMessage() const
+{
+    return m_errorMessage;
 }
 
-void DataProcessor::processDataOffline(const std::string& inputInfo) {
-    auto electricityInfo = m_dbManager.getElectricityInfo(inputInfo);
-    if (electricityInfo.empty()) {
-        throw std::runtime_error("No saved electricity info found for today");
-    }
-
-    for (const auto& info : electricityInfo) {
-        int hour = std::get<1>(info);
-        int status = std::get<2>(info);
-        int queue = std::get<3>(info);
-        int subqueue = std::get<4>(info);
-
-        m_shutdownInfo.setQueue(queue);
-        m_shutdownInfo.setSubqueue(subqueue);
-
-        if (status == 1) {
-            m_shutdownInfo.addWillBeElectricityToday(hour);
-        } else if (status == 2) {
-            m_shutdownInfo.addMightBeElectricityToday(hour);
-        } else if (status == 3) {
-            m_shutdownInfo.addWontBeElectricityToday(hour);
-        }
-    }
-}
-
-void DataProcessor::saveProcessedData(const std::string& inputInfo) {
-    std::string currentDate = getCurrentDate();
-
-    if (m_dbManager.isUserInfoExist(inputInfo)) {
-        m_dbManager.deleteUserInfo(inputInfo);
-    }
-    m_dbManager.saveUserInfo(inputInfo);
-
-    for (const auto& [hour, _] : m_shutdownInfo.getWillBeElectricityToday()) {
-        m_dbManager.saveElectricityInfo(inputInfo, currentDate, hour, 1, m_shutdownInfo.getQueue(), m_shutdownInfo.getSubqueue());
-    }
-    for (const auto& [hour, _] : m_shutdownInfo.getMightBeElectricityToday()) {
-        m_dbManager.saveElectricityInfo(inputInfo, currentDate, hour, 2, m_shutdownInfo.getQueue(), m_shutdownInfo.getSubqueue());
-    }
-    for (const auto& [hour, _] : m_shutdownInfo.getWontBeElectricityToday()) {
-        m_dbManager.saveElectricityInfo(inputInfo, currentDate, hour, 3, m_shutdownInfo.getQueue(), m_shutdownInfo.getSubqueue());
-    }
-}
-
-std::string DataProcessor::getCurrentDate() const {
-    auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d");
-    return ss.str();
+void DataProcessor::reset()
+{
+    m_request = ShutdownInfo();
+    m_errorMessage.clear();
 }

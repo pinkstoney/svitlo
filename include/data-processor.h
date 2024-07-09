@@ -1,30 +1,28 @@
 #pragma once
 
-#include <string>
-#include <chrono>
-#include <optional>
-#include <algorithm>
-#include <iomanip>
-#include <sstream>
-
-#include "database-manager.h"
 #include "shutdown-info.h"
+#include "database-manager.h"
+#include "data-loading-strategy.h"
+#include "online-loading-strategy.h"
+#include "offline-loading-strategy.h"
+#include <string>
+#include <memory>
 
 class DataProcessor {
 public:
     DataProcessor(DatabaseManager& dbManager);
 
-    void processData(const std::string& inputInfo, bool isOnline);
-    ShutdownInfo getProcessedData() const;
-    bool isInternetConnected() const;
+    void reset();
+
+    void processData(const std::string& inputInfo, bool isInternetConnected);
+    void setLoadingStrategy(bool isOnline);
+    ShutdownInfo getProcessedRequest() const;
+    std::string getErrorMessage() const;
+    void clearErrorMessage();
 
 private:
-    void processDataOnline(const std::string& inputInfo);
-    void processDataOffline(const std::string& inputInfo);
-    void saveProcessedData(const std::string& inputInfo);
-    std::string getCurrentDate() const;
-
     DatabaseManager& m_dbManager;
-    ShutdownInfo m_shutdownInfo;
-    bool m_isInternetConnected;
+    std::unique_ptr<DataLoadingStrategy> m_loadingStrategy;
+    ShutdownInfo m_request;
+    std::string m_errorMessage;
 };
