@@ -1,5 +1,6 @@
 #include "../include/shutdown-circle.h"
 #include "../include/utility.h"
+#include "../include/ui-manager.h"
 
 #include <algorithm>
 #include <sstream>
@@ -9,12 +10,6 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
-
-constexpr float ANGLE_PER_HOUR = 360.0f / 24.0f;
-constexpr Color CUSTOM_GREEN = {161, 221, 112, 255};
-constexpr Color CUSTOM_ORANGE = {253, 208, 157, 255};
-constexpr Color CUSTOM_RED = {238, 78, 78, 255};
-constexpr Color DEFAULT_COLOR = LIGHTGRAY;
 
 ShutdownCircle::ShutdownCircle(Vector2 center, float radius, float innerRadius,
                                ElectricityData data, const Font& font)

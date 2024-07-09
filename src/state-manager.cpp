@@ -37,6 +37,24 @@ bool StateManager::isAddressEntered() const {
     return m_isAddressEntered;
 }
 
+bool StateManager::isInternetConnected() const
+{
+    CURL* curl;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (curl)
+    {
+        curl_easy_setopt(curl, CURLOPT_URL, "http://www.google.com");
+                curl_easy_setopt(curl, CURLOPT_NOBODY, 1);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+        res = curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        return (res == CURLE_OK);
+    }
+    return false;
+}
+
 void StateManager::setAddressEntered(bool entered) {
     m_isAddressEntered = entered;
 }

@@ -31,7 +31,7 @@ bool UIManager::textBox(Rectangle bounds, char* text, int textSize, bool editMod
     return GuiTextBox(bounds, text, textSize, editMode);
 }
 
-bool UIManager::button(Rectangle bounds, const std::string& text)
+bool UIManager::button(Rectangle bounds, const std::string& text) const
 {
     return GuiButton(bounds, text.c_str());
 }
@@ -63,4 +63,43 @@ Font UIManager::getDiscoveryFont() const
 Font UIManager::getLexendFont() const
 {
     return m_lexendFont;
+}
+
+void UIManager::drawInternetStatus(bool isConnected) const
+{
+    const char* statusText = isConnected ? "Online" : "Offline";
+    Color statusColor = isConnected ? DARKGREEN : CUSTOM_RED;
+    drawText(statusText, 575, 30, 20, statusColor);
+}
+
+void UIManager::drawDataSavedTime(const std::string& savedTime) const 
+{
+    drawText("Data saved on: " + savedTime, 10, 30, 20, BLACK);
+}
+
+bool UIManager::drawToggleSavedUserInfoButton(int windowHeight, bool isDisplayed) const
+{
+    const char* buttonText = isDisplayed ? "Hide saved user info" : "Use saved user info";
+    return button({10, static_cast<float>(windowHeight - 60), 200, 30}, buttonText);
+}
+
+bool UIManager::drawHomeButton(int i, bool isHome) const
+{
+    const char* buttonText = isHome ? "Remove as Home" : "Set as Home";
+    return button({330, static_cast<float>(100 + i * 30), 150, 30}, buttonText);
+}
+
+bool UIManager::drawDeleteButton(int i) const
+{
+    return button({220, static_cast<float>(100 + i * 30), 100, 30}, "Delete");
+}
+
+void UIManager::drawInputPrompt() const 
+{
+    drawText("Enter data:", 10, 30, 20, BLACK);
+}
+
+bool UIManager::drawBackButton(int windowHeight) const 
+{
+    return button({990, static_cast<float>(windowHeight - 60), 200, 30}, "Go back to data input");
 }

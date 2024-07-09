@@ -18,6 +18,8 @@ public:
     AppState getCurrentState() const;
     void setCurrentState(AppState newState);
 
+    bool isInternetConnected() const;
+
     bool isAddressEntered() const;
     void setAddressEntered(bool entered);
 

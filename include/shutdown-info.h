@@ -16,8 +16,6 @@ public:
     ~ShutdownInfo();
 
 public:
-    bool isInternetConnected() const;
-
     void addHeader(const std::string& header);
     void setPostData(const std::string& choice, const std::string& info);
     std::string send();

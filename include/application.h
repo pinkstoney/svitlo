@@ -28,6 +28,8 @@ public:
     void run();
 
 private:
+    enum { MAX_INPUT_LENGTH = 245 };
+
     void m_initializeWindow() const;
     void m_loadUserHomeInfo();
     void m_processState();
