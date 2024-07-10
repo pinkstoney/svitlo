@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 #include "shutdown-info.h"
 #include "database-manager.h"
 

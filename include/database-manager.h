@@ -9,9 +9,11 @@
 #include <sstream>
 #include <iomanip>
 #include <chrono>
+
 #include <sqlite3.h>
 
-class DatabaseManager {
+class DatabaseManager
+        {
 public:
     explicit DatabaseManager(std::string dbPath);
     ~DatabaseManager() = default;

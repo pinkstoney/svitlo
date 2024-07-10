@@ -56,6 +56,8 @@ add_executable(svitlo main.cpp
         src/offline-loading-strategy.cpp
         include/data-processor.h
         src/data-processor.cpp
+        include/saved-user-info-manager.h
+        src/saved-user-info-manager.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)

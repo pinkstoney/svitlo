@@ -1,22 +1,30 @@
 #pragma once
 
-#include "shutdown-info.h"
 #include <iostream>
 
-enum class AppState {
+#include "shutdown-info.h"
+
+enum class AppState
+{
     INPUT,
     DISPLAYING_RESULTS,
 };
 
 std::ostream& operator<<(std::ostream& os, const AppState& state);
 
-class StateManager {
+class StateManager
+{
 public:
     StateManager();
 
+public:
     AppState getCurrentState() const;
     void setCurrentState(AppState newState);
 
+public:
+    void reset();
+
+public:
     bool isInternetConnected() const;
 
     bool isAddressEntered() const;
@@ -27,8 +35,6 @@ public:
 
     const ShutdownInfo& getShutdownInfo() const;
     void setShutdownInfo(const ShutdownInfo& info);
-
-    void reset();
 
 private:
     AppState m_currentState;

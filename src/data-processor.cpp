@@ -1,5 +1,4 @@
 #include "../include/data-processor.h"
-#include "../include/utility.h"
 #include <algorithm>
 
 DataProcessor::DataProcessor(DatabaseManager& dbManager) : m_dbManager(dbManager) {}

@@ -5,9 +5,8 @@
 const ApplicationSpecification appSpec;
 
 Application::Application()
-        : m_uiManager(), m_dbManager("user_info.db"), m_stateManager(),
-          m_dataProcessor(m_dbManager), m_isInternetConnected(false),
-          m_isSavedUserInfoDisplayed(false), m_DataListCurrentActive(-1)
+        : m_uiManager(), m_dbManager("user_info.db"),
+          m_dataProcessor(m_dbManager), m_savedUserInfoManager(m_dbManager)
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
     m_initializeWindow();
@@ -29,8 +28,8 @@ void Application::m_initializeWindow() const
 
 void Application::run() 
 {
-    //m_isInternetConnected = m_stateManager.isInternetConnected();
-     m_isInternetConnected = false; 
+    m_isInternetConnected = m_stateManager.isInternetConnected();
+   // m_isInternetConnected = true; 
     m_loadUserHomeInfo();
 
     while (!WindowShouldClose()) 
@@ -105,106 +104,51 @@ void Application::m_displayDataSavedTime()
 
 void Application::m_processSavedUserInfo() 
 {
-    if (m_dbManager.isDatabaseEmpty() && !m_stateManager.isDataProcessed())
+    m_savedUserInfoManager.updateAllUserInfo();
+
+    if (m_dbManager.isDatabaseEmpty() && !m_stateManager.isDataProcessed()) 
         return;
 
-    if (m_uiManager.drawToggleSavedUserInfoButton(appSpec.WINDOW_HEIGHT, m_isSavedUserInfoDisplayed))
-        m_toggleSavedUserInfo(!m_isSavedUserInfoDisplayed);
+    bool shouldToggle = m_uiManager.drawToggleSavedUserInfoButton(appSpec.WINDOW_HEIGHT, m_savedUserInfoManager.isSavedUserInfoDisplayed());
+    if (shouldToggle)
+        m_savedUserInfoManager.toggleSavedUserInfo(!m_savedUserInfoManager.isSavedUserInfoDisplayed());
 
-    if (m_isSavedUserInfoDisplayed)
+    if (m_savedUserInfoManager.isSavedUserInfoDisplayed()) 
         m_displaySavedUserInfo();
 }
 
 void Application::m_displaySavedUserInfo()
 {
-    if (m_stateManager.isDataProcessed() && !m_allUserInfoStr.empty())
-        m_displaySavedUserInfoList();
-
-}
-
-void Application::m_toggleSavedUserInfo(bool show)
-{
-    m_isSavedUserInfoDisplayed = show;
-    m_stateManager.setDataProcessed(show);
-
-    if (show)
+    if (m_savedUserInfoManager.hasUserInfo())
     {
-        m_DataListCurrentActive = -1;
-        m_updateAllUserInfo();
-    }
-}
+        Rectangle bounds = {10, 100, 200, 300};
+        int scrollIndex = 0;
+        int activeIndex = -1;
 
-void Application::m_updateAllUserInfo()
-{
-    m_allUserInfo = m_dbManager.getAllUserInfo();
-    m_allUserInfoStr = std::accumulate(m_allUserInfo.begin(), m_allUserInfo.end(), std::string(), Utility::concatenteInfo);
-}
+        m_uiManager.listView(bounds, m_savedUserInfoManager.getAllUserInfoStr().c_str(), &scrollIndex, &activeIndex);
 
-void Application::m_displaySavedUserInfoList() 
-{
-    Rectangle bounds = {10, 100, 200, 300};
-    int scrollIndex = 0;
-
-    m_uiManager.listView(bounds, m_allUserInfoStr.c_str(), &scrollIndex, &m_DataListCurrentActive);
-
-    m_handleUserInfoSelection();
-    m_processHomeButtons();
-    m_processDeleteUserInfo();
-}
-
-void Application::m_handleUserInfoSelection()
-{
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && m_DataListCurrentActive >= 0) 
-    {
-        std::string selectedUserInfo = m_allUserInfo[m_DataListCurrentActive].first;
-        processData(selectedUserInfo);
-        m_stateManager.setDataProcessed(false);
-    }
-}
-
-void Application::m_processHomeButtons()
-{
-
-    for (int i = 0; i < m_allUserInfo.size(); i++) 
-    {
-        std::string homeUserInfo = m_dbManager.getHomeUserInfo();
-        bool isHome = (m_allUserInfo[i].first == homeUserInfo);
-
-        if (m_uiManager.drawHomeButton(i, isHome)) 
+        if (activeIndex >= 0)
         {
-            if (isHome)
-                m_dbManager.removeHomeUserInfo();
-            else
-                m_dbManager.setHomeUserInfo(m_allUserInfo[i].first);
-            
-//            homeUserInfo = m_dbManager.getHomeUserInfo();
+            m_savedUserInfoManager.handleUserInfoSelection(activeIndex, [this](const std::string& selectedInfo)
+            {
+                this->processData(selectedInfo);
+            });
+        }
+
+        const auto& allUserInfo = m_savedUserInfoManager.getAllUserInfo();
+        for (int i = 0; i < allUserInfo.size(); i++) 
+        {
+            std::string homeUserInfo = m_dbManager.getHomeUserInfo();
+            bool isHome = (allUserInfo[i].first == homeUserInfo);
+
+            if (m_uiManager.drawHomeButton(i, isHome)) 
+                m_savedUserInfoManager.processHomeButton(i);
+
+            if (m_uiManager.drawDeleteButton(i)) 
+                m_savedUserInfoManager.processDeleteButton(i);
         }
     }
-}
-
-void Application::m_processDeleteUserInfo() 
-{
-    for (int i = 0; i < m_allUserInfo.size(); i++) 
-    {
-        if (m_uiManager.drawDeleteButton(i)) 
-        {
-            m_dbManager.deleteUserInfo(m_allUserInfo[i].first);
-            m_updateAllUserInfo();
-            break;  
-        }
-    }
-}
-
-void Application::setLoadingStrategy(bool isOnline) 
-{
-    if (isOnline)
-        m_loadingStrategy = std::make_unique<OnlineLoadingStrategy>();
-    else 
-        m_loadingStrategy = std::make_unique<OfflineLoadingStrategy>();
-    
-}
-
-void Application::processData(const std::string& inputInfo)
+}void Application::processData(const std::string& inputInfo)
 {
     m_dataProcessor.processData(inputInfo, m_isInternetConnected);
     
@@ -235,7 +179,7 @@ void Application::clearUserInput()
     memset(m_info, 0, sizeof(m_info));
 }
 
-void Application::m_displayErrorMessage()
+void Application::m_displayErrorMessage() const
 {   
     if (!m_errorMessage.empty()) 
         m_uiManager.drawText(m_errorMessage, 10, appSpec.WINDOW_HEIGHT - 30, 20, RED);
