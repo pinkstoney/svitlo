@@ -3,11 +3,9 @@
 #include <string>
 #include <memory>
 
-#include "shutdown-info.h"
+#include "shutdown-data.h"
 #include "database-manager.h"
-#include "data-loading-strategy.h"
-#include "online-loading-strategy.h"
-#include "offline-loading-strategy.h"
+#include "data-fetching-strategy.h"
 
 class DataProcessor
 {
@@ -19,13 +17,13 @@ public:
 
     void processData(const std::string& inputInfo, bool isInternetConnected);
     void setLoadingStrategy(bool isOnline);
-    ShutdownInfo getProcessedRequest() const;
+    ShutdownData getProcessedRequest() const;
 
     std::string getErrorMessage() const;
 
 private:
     DatabaseManager& m_dbManager;
-    std::unique_ptr<DataLoadingStrategy> m_loadingStrategy;
-    ShutdownInfo m_request;
+    std::unique_ptr<DataFetchingStrategy> m_dataFetchingStrategy;
+    ShutdownData m_request;
     std::string m_errorMessage;
 };

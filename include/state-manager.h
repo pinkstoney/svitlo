@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include "shutdown-info.h"
+#include "shutdown-data.h"
 
 enum class AppState
 {
@@ -33,14 +33,14 @@ public:
     bool isDataProcessed() const;
     void setDataProcessed(bool processed);
 
-    const ShutdownInfo& getShutdownInfo() const;
-    void setShutdownInfo(const ShutdownInfo& info);
+    const ShutdownData& getShutdownData() const;
+    void setShutdownData(const ShutdownData& info);
 
 private:
     AppState m_currentState;
     bool m_isAddressEntered;
     bool m_isDataProcessed;
-    ShutdownInfo m_shutdownInfo;
+    ShutdownData m_shutdownInfo;
 };
         
 

@@ -1,5 +1,10 @@
 #include "../include/database-manager.h"
 
+#include <stdexcept>
+#include <sstream>
+#include <iomanip>
+#include <chrono>
+
 DatabaseManager::DatabaseManager(std::string dbPath) 
     : m_dbPath(std::move(dbPath)), m_db(nullptr, sqlite3_close)
 {

@@ -1,7 +1,7 @@
-#include "../include/online-loading-strategy.h"
+#include "../include/online-fetching-strategy.h"
 #include "../include/utility.h"
 
-void OnlineLoadingStrategy::loadData(const std::string& inputInfo, ShutdownInfo& request, DatabaseManager& dbManager) 
+void OnlineFetchingStrategy::loadData(const std::string& inputInfo, ShutdownData& request, DatabaseManager& dbManager) 
 {
     std::string response = request.send();
     request.processRawElectricityData(response);

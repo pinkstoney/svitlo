@@ -1,14 +1,9 @@
 #pragma once
 
 #include <memory>
-#include <iostream>
 #include <vector>
 #include <tuple>
 #include <functional>
-#include <stdexcept>
-#include <sstream>
-#include <iomanip>
-#include <chrono>
 
 #include <sqlite3.h>
 

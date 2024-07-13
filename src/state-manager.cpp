@@ -22,15 +22,18 @@ StateManager::StateManager()
       m_isAddressEntered(false),
       m_isDataProcessed(false) {}
 
-AppState StateManager::getCurrentState() const {
+AppState StateManager::getCurrentState() const 
+{
     return m_currentState;
 }
 
-void StateManager::setCurrentState(AppState newState) {
+void StateManager::setCurrentState(AppState newState) 
+{
     m_currentState = newState;
 }
 
-bool StateManager::isAddressEntered() const {
+bool StateManager::isAddressEntered() const 
+{
     return m_isAddressEntered;
 }
 
@@ -52,29 +55,35 @@ bool StateManager::isInternetConnected() const
     return false;
 }
 
-void StateManager::setAddressEntered(bool entered) {
+void StateManager::setAddressEntered(bool entered) 
+{
     m_isAddressEntered = entered;
 }
 
-bool StateManager::isDataProcessed() const {
+bool StateManager::isDataProcessed() const 
+{
     return m_isDataProcessed;
 }
 
-void StateManager::setDataProcessed(bool processed) {
+void StateManager::setDataProcessed(bool processed) 
+{
     m_isDataProcessed = processed;
 }
 
-const ShutdownInfo& StateManager::getShutdownInfo() const {
+const ShutdownData& StateManager::getShutdownData() const 
+{
     return m_shutdownInfo;
 }
 
-void StateManager::setShutdownInfo(const ShutdownInfo& info) {
+void StateManager::setShutdownData(const ShutdownData& info) 
+{
     m_shutdownInfo = info;
 }
 
-void StateManager::reset() {
+void StateManager::reset() 
+{
     m_currentState = AppState::INPUT;
     m_isAddressEntered = false;
     m_isDataProcessed = false;
-    m_shutdownInfo = ShutdownInfo();
+    m_shutdownInfo = ShutdownData();
 }

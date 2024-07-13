@@ -1,8 +1,6 @@
 #pragma once
 
-#include "shutdown-info.h"
-#include "shutdown-circle.h"
-#include "electricity-data.h"
+#include "shutdown-data.h"
 
 #include <raylib.h>
 #include <raygui.h>
@@ -19,7 +17,7 @@ public:
     ~UIManager();
 
 public:
-    void drawCircles(const ShutdownInfo& request, const Font& font) const;
+    void drawCircles(const ShutdownData& request, const Font& font) const;
 
     void drawText(const std::string& text, int posX, int posY, int fontSize, Color color) const;
     bool textBox(Rectangle bounds, char* text, int textSize, bool editMode);

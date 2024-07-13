@@ -1,6 +1,6 @@
-#include "../include/offline-loading-strategy.h"
+#include "../include/offline-fetching-strategy.h"
 
-void OfflineLoadingStrategy::loadData(const std::string& inputInfo, ShutdownInfo& request, DatabaseManager& dbManager) 
+void OfflineFetchingStrategy::loadData(const std::string& inputInfo, ShutdownData& request, DatabaseManager& dbManager) 
 {
     auto electricityInfo = dbManager.getElectricityInfo(inputInfo);
     for (const auto& info : electricityInfo) 

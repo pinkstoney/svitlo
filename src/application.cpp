@@ -1,12 +1,12 @@
 #include "../include/application.h"
+
 #include "../include/state-manager.h"
-#include "../include/utility.h"
 
 const ApplicationSpecification appSpec;
 
 Application::Application()
         : m_uiManager(), m_dbManager("user_info.db"),
-          m_dataProcessor(m_dbManager), m_savedUserInfoManager(m_dbManager)
+          m_dataProcessor(m_dbManager), m_userRecordManager(m_dbManager)
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
     m_initializeWindow();
@@ -104,48 +104,48 @@ void Application::m_displayDataSavedTime()
 
 void Application::m_processSavedUserInfo() 
 {
-    m_savedUserInfoManager.updateAllUserInfo();
+    m_userRecordManager.updateAllUserInfo();
 
     if (m_dbManager.isDatabaseEmpty() && !m_stateManager.isDataProcessed()) 
         return;
 
-    bool shouldToggle = m_uiManager.drawToggleSavedUserInfoButton(appSpec.WINDOW_HEIGHT, m_savedUserInfoManager.isSavedUserInfoDisplayed());
+    bool shouldToggle = m_uiManager.drawToggleSavedUserInfoButton(appSpec.WINDOW_HEIGHT, m_userRecordManager.isSavedUserInfoDisplayed());
     if (shouldToggle)
-        m_savedUserInfoManager.toggleSavedUserInfo(!m_savedUserInfoManager.isSavedUserInfoDisplayed());
+        m_userRecordManager.toggleSavedUserInfo(!m_userRecordManager.isSavedUserInfoDisplayed());
 
-    if (m_savedUserInfoManager.isSavedUserInfoDisplayed()) 
+    if (m_userRecordManager.isSavedUserInfoDisplayed()) 
         m_displaySavedUserInfo();
 }
 
 void Application::m_displaySavedUserInfo()
 {
-    if (m_savedUserInfoManager.hasUserInfo())
+    if (m_userRecordManager.hasUserInfo())
     {
         Rectangle bounds = {10, 100, 200, 300};
         int scrollIndex = 0;
         int activeIndex = -1;
 
-        m_uiManager.listView(bounds, m_savedUserInfoManager.getAllUserInfoStr().c_str(), &scrollIndex, &activeIndex);
+        m_uiManager.listView(bounds, m_userRecordManager.getAllUserInfoStr().c_str(), &scrollIndex, &activeIndex);
 
         if (activeIndex >= 0)
         {
-            m_savedUserInfoManager.handleUserInfoSelection(activeIndex, [this](const std::string& selectedInfo)
+            m_userRecordManager.handleUserInfoSelection(activeIndex, [this](const std::string& selectedInfo)
             {
                 this->processData(selectedInfo);
             });
         }
 
-        const auto& allUserInfo = m_savedUserInfoManager.getAllUserInfo();
+        const auto& allUserInfo = m_userRecordManager.getAllUserInfo();
         for (int i = 0; i < allUserInfo.size(); i++) 
         {
             std::string homeUserInfo = m_dbManager.getHomeUserInfo();
             bool isHome = (allUserInfo[i].first == homeUserInfo);
 
             if (m_uiManager.drawHomeButton(i, isHome)) 
-                m_savedUserInfoManager.processHomeButton(i);
+                m_userRecordManager.processHomeButton(i);
 
             if (m_uiManager.drawDeleteButton(i)) 
-                m_savedUserInfoManager.processDeleteButton(i);
+                m_userRecordManager.processDeleteButton(i);
         }
     }
 }void Application::processData(const std::string& inputInfo)
@@ -170,7 +170,7 @@ void Application::resetApplicationState()
     m_stateManager.reset();
     m_dataProcessor.reset();
     clearUserInput();
-    m_request = ShutdownInfo();
+    m_request = ShutdownData();
     m_isSavedUserInfoDisplayed = false;
 }
 

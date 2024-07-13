@@ -6,10 +6,10 @@
 
 #include "database-manager.h"
 
-class SavedUserInfoManager
+class UserRecordManager
 {
 public:
-    SavedUserInfoManager(DatabaseManager& dbManager);
+    UserRecordManager(DatabaseManager& dbManager);
 
 public:
     void toggleSavedUserInfo(bool show);

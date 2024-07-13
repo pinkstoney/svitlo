@@ -1,5 +1,8 @@
 #include "../include/ui-manager.h"
 
+#include "../include/shutdown-circle.h"
+#include "../include/electricity-data.h"
+
 UIManager::~UIManager()
 {
     GuiSetFont(GetFontDefault());
@@ -8,7 +11,7 @@ UIManager::~UIManager()
     UnloadFont(m_lexendFont);
 }
 
-void UIManager::drawCircles(const ShutdownInfo& request, const Font& font) const
+void UIManager::drawCircles(const ShutdownData& request, const Font& font) const
 {
     DrawText("Today", 100, 100, 50, BLACK);
     ElectricityData dataToday(request.getWillBeElectricityToday(), request.getMightBeElectricityToday(), request.getWontBeElectricityToday(), request.getQueue(), request.getSubqueue());

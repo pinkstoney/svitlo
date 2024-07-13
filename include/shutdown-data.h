@@ -1,19 +1,16 @@
 #pragma once
 
 #include <string>
-#include <iostream>
-#include <algorithm>
-#include <sstream>
 
 #include <curl/curl.h>
 
 #include "nlohmann/json.hpp"
 
-class ShutdownInfo
+class ShutdownData
 {
 public:
-    ShutdownInfo();
-    ~ShutdownInfo();
+    ShutdownData();
+    ~ShutdownData();
 
 public:
     void addHeader(const std::string& header);

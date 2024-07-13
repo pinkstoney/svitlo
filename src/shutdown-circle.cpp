@@ -1,4 +1,5 @@
 #include "../include/shutdown-circle.h"
+
 #include "../include/utility.h"
 #include "../include/ui-manager.h"
 

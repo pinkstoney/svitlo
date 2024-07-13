@@ -1,6 +1,8 @@
-#include "../include/shutdown-info.h"
+#include "../include/shutdown-data.h"
 
-size_t ShutdownInfo::m_writeCallback(void* contents, size_t size, size_t nmemb, void* userp)
+#include <iostream>
+
+size_t ShutdownData::m_writeCallback(void* contents, size_t size, size_t nmemb, void* userp)
 {
     size_t totalSize = size * nmemb;
     auto s = static_cast<std::string*>(userp);
@@ -8,11 +10,11 @@ size_t ShutdownInfo::m_writeCallback(void* contents, size_t size, size_t nmemb, 
     return totalSize;
 }
 
-bool ShutdownInfo::s_curlInitialized = false;
+bool ShutdownData::s_curlInitialized = false;
 
-curl_slist* ShutdownInfo::s_headers = nullptr;
+curl_slist* ShutdownData::s_headers = nullptr;
 
-ShutdownInfo::ShutdownInfo()
+ShutdownData::ShutdownData()
         : m_url("https://svitlo.oe.if.ua/GAVTurnOff/GavGroupByAccountNumber")
 {
     if (!s_curlInitialized)
@@ -24,7 +26,7 @@ ShutdownInfo::ShutdownInfo()
     addHeader("Content-Type: application/x-www-form-urlencoded; charset=UTF-8");
 }
 
-ShutdownInfo::~ShutdownInfo()
+ShutdownData::~ShutdownData()
 {
     if (s_headers)
     {
@@ -38,12 +40,12 @@ ShutdownInfo::~ShutdownInfo()
     }
 }
 
-void ShutdownInfo::addHeader(const std::string& header)
+void ShutdownData::addHeader(const std::string& header)
 {
     s_headers = curl_slist_append(s_headers, header.c_str());
 }
 
-void ShutdownInfo::setPostData(const std::string& choice, const std::string& info)
+void ShutdownData::setPostData(const std::string& choice, const std::string& info)
 {
     if (choice == "accountNumber")
     {
@@ -59,7 +61,7 @@ void ShutdownInfo::setPostData(const std::string& choice, const std::string& inf
     }
 }
 
-std::string ShutdownInfo::send() {
+std::string ShutdownData::send() {
     CURL *curl;
     CURLcode res;
 
@@ -88,12 +90,12 @@ std::string ShutdownInfo::send() {
 
     return m_readBuffer;
 }
-void ShutdownInfo::processRawElectricityData(const std::string& rawData) const
+void ShutdownData::processRawElectricityData(const std::string& rawData) const
 {
     std::cout << "raw data: " << rawData << std::endl;
 }
 
-void ShutdownInfo::processHour(const nlohmann::json& hourData, bool isToday) {
+void ShutdownData::processHour(const nlohmann::json& hourData, bool isToday) {
     int electricity = hourData["electricity"];
     int hour = std::stoi(hourData["hour"].get<std::string>());
     int previousHour = (hour == 1) ? 24 : hour - 1;
@@ -110,7 +112,7 @@ void ShutdownInfo::processHour(const nlohmann::json& hourData, bool isToday) {
         willBeElectricity.emplace_back(previousHour, hour);
 }
 
-void ShutdownInfo::formatElectricityData(const std::string& rawData)
+void ShutdownData::formatElectricityData(const std::string& rawData)
 {
     if (rawData.empty())
         throw std::runtime_error("Received empty data. Cannot parse as JSON.");
@@ -150,57 +152,57 @@ void ShutdownInfo::formatElectricityData(const std::string& rawData)
     }
 }
 
-const std::vector<std::pair<int, int>>& ShutdownInfo::getWillBeElectricityToday() const
+const std::vector<std::pair<int, int>>& ShutdownData::getWillBeElectricityToday() const
 {
     return m_willBeElectricityToday;
 }
 
-const std::vector<std::pair<int, int>>& ShutdownInfo::getMightBeElectricityToday() const
+const std::vector<std::pair<int, int>>& ShutdownData::getMightBeElectricityToday() const
 {
     return m_mightBeElectricityToday;
 }
 
-const std::vector<std::pair<int, int>>& ShutdownInfo::getWontBeElectricityToday() const
+const std::vector<std::pair<int, int>>& ShutdownData::getWontBeElectricityToday() const
 {
     return m_wontBeElectricityToday;
 }
 
-const std::vector<std::pair<int, int>>& ShutdownInfo::getWillBeElectricityTomorrow() const
+const std::vector<std::pair<int, int>>& ShutdownData::getWillBeElectricityTomorrow() const
 {
     return m_willBeElectricityTomorrow;
 }
 
-const std::vector<std::pair<int, int>>& ShutdownInfo::getMightBeElectricityTomorrow() const
+const std::vector<std::pair<int, int>>& ShutdownData::getMightBeElectricityTomorrow() const
 {
     return m_mightBeElectricityTomorrow;
 }
 
-const std::vector<std::pair<int, int>>& ShutdownInfo::getWontBeElectricityTomorrow() const
+const std::vector<std::pair<int, int>>& ShutdownData::getWontBeElectricityTomorrow() const
 {
     return m_wontBeElectricityTomorrow;
 }
 
-void ShutdownInfo::addWillBeElectricityToday(int hour)
+void ShutdownData::addWillBeElectricityToday(int hour)
 {
     m_willBeElectricityToday.emplace_back(hour, hour + 1);
 }
 
-void ShutdownInfo::addMightBeElectricityToday(int hour)
+void ShutdownData::addMightBeElectricityToday(int hour)
 {
     m_mightBeElectricityToday.emplace_back(hour, hour + 1);
 }
 
-void ShutdownInfo::addWontBeElectricityToday(int hour)
+void ShutdownData::addWontBeElectricityToday(int hour)
 {
     m_wontBeElectricityToday.emplace_back(hour, hour + 1);
 }
 
-void ShutdownInfo::setQueue(int queue)
+void ShutdownData::setQueue(int queue)
 {
     m_queue = queue;
 }
 
-void ShutdownInfo::setSubqueue(int subqueue)
+void ShutdownData::setSubqueue(int subqueue)
 {
     m_subqueue = subqueue;
 }

@@ -30,8 +30,8 @@ endif()
 find_package(fmt)
 
 add_executable(svitlo main.cpp
-        src/shutdown-info.cpp
-        include/shutdown-info.h
+        src/shutdown-data.cpp
+        include/shutdown-data.h
         include/circle.h
         src/circle.cpp
         src/shutdown-circle.cpp
@@ -49,15 +49,15 @@ add_executable(svitlo main.cpp
         src/state-manager.cpp
         include/utility.h
         src/utility.cpp
-        include/data-loading-strategy.h
-        include/online-loading-strategy.h
-        src/online-loading-strategy.cpp
-        include/offline-loading-strategy.h
-        src/offline-loading-strategy.cpp
+        include/data-fetching-strategy.h
+        include/online-fetching-strategy.h
+        src/online-fetching-strategy.cpp
+        include/offline-fetching-strategy.h
+        src/offline-fetching-strategy.cpp
         include/data-processor.h
         src/data-processor.cpp
-        include/saved-user-info-manager.h
-        src/saved-user-info-manager.cpp
+        include/user-record-manager.h
+        src/user-record-manager.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/libs)

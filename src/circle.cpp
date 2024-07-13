@@ -1,4 +1,5 @@
 #include "../include/circle.h"
+
 #include <cmath>
 
 Circle::Circle(Vector2 center, float radius, float innerRadius)

@@ -6,7 +6,8 @@
 #include "circle.h"
 #include "electricity-data.h"
 
-class ShutdownCircle : public Circle {
+class ShutdownCircle : public Circle 
+{
 private:
     ElectricityData m_data;
     Font m_font;

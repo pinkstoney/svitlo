@@ -1,4 +1,8 @@
 #include "../include/data-processor.h"
+
+#include "../include/online-fetching-strategy.h"
+#include "../include/offline-fetching-strategy.h"
+
 #include <algorithm>
 
 DataProcessor::DataProcessor(DatabaseManager& dbManager) : m_dbManager(dbManager) {}
@@ -13,7 +17,7 @@ void DataProcessor::processData(const std::string& inputInfo, bool isInternetCon
         m_request.setPostData(userChoice, inputInfo);
 
         setLoadingStrategy(isInternetConnected); 
-        m_loadingStrategy->loadData(inputInfo, m_request, m_dbManager);
+        m_dataFetchingStrategy->loadData(inputInfo, m_request, m_dbManager);
     }
     catch (const std::exception& e)
     {
@@ -24,12 +28,12 @@ void DataProcessor::processData(const std::string& inputInfo, bool isInternetCon
 void DataProcessor::setLoadingStrategy(bool isOnline)
 {
     if (isOnline)
-        m_loadingStrategy = std::make_unique<OnlineLoadingStrategy>();
+        m_dataFetchingStrategy = std::make_unique<OnlineFetchingStrategy>();
     else 
-        m_loadingStrategy = std::make_unique<OfflineLoadingStrategy>();
+        m_dataFetchingStrategy = std::make_unique<OfflineFetchingStrategy>();
 }
 
-ShutdownInfo DataProcessor::getProcessedRequest() const
+ShutdownData DataProcessor::getProcessedRequest() const
 {
     return m_request;
 }
@@ -41,6 +45,6 @@ std::string DataProcessor::getErrorMessage() const
 
 void DataProcessor::reset()
 {
-    m_request = ShutdownInfo();
+    m_request = ShutdownData();
     m_errorMessage.clear();
 }

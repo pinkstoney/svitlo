@@ -1,18 +1,14 @@
 #pragma once
 
-#include <thread>
-
 #include "raygui.h"
 
 #include "ui-manager.h"
-#include "shutdown-info.h"
+#include "shutdown-data.h"
 #include "database-manager.h"
 #include "state-manager.h"
-#include "data-loading-strategy.h"
-#include "online-loading-strategy.h"
-#include "offline-loading-strategy.h"
+#include "data-fetching-strategy.h"
 #include "data-processor.h"
-#include "saved-user-info-manager.h"
+#include "user-record-manager.h"
 
 struct ApplicationSpecification
 {
@@ -52,11 +48,11 @@ private:
 private:
     UIManager m_uiManager;
     DatabaseManager m_dbManager;
-    ShutdownInfo m_request;
+    ShutdownData m_request;
     StateManager m_stateManager;
-    std::unique_ptr<DataLoadingStrategy> m_loadingStrategy;
+    std::unique_ptr<DataFetchingStrategy> m_dataFetchingStrategy;
     DataProcessor m_dataProcessor;
-    SavedUserInfoManager m_savedUserInfoManager;
+    UserRecordManager m_userRecordManager;
 
 private:
     int m_DataListCurrentActive = -1;
