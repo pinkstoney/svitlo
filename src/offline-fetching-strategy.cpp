@@ -1,23 +1,43 @@
 #include "../include/offline-fetching-strategy.h"
 
-void OfflineFetchingStrategy::loadData(const std::string& inputInfo, ShutdownData& request, DatabaseManager& dbManager) 
+void OfflineFetchingStrategy::loadData(const std::string& inputInfo, ShutdownData& request, DatabaseManager& dbManager)
 {
-    auto electricityInfo = dbManager.getElectricityInfo(inputInfo);
-    for (const auto& info : electricityInfo) 
+    auto todayData = dbManager.getElectricityInfo(inputInfo, false);
+
+    for (const auto& [date, hour, status, queue, subqueue] : todayData)
     {
-        int hour = std::get<1>(info);
-        int status = std::get<2>(info);
-        int queue = std::get<3>(info);
-        int subqueue = std::get<4>(info);
+        if (status == 0) 
+        {
+            request.addWillBeElectricityToday(hour);
+        } 
+        else if (status == 2)
+        {
+            request.addMightBeElectricityToday(hour);
+        }
+        else if (status == 1)
+        {
+            request.addWontBeElectricityToday(hour);
+        }
 
         request.setQueue(queue);
         request.setSubqueue(subqueue);
+    }
 
-        if (status == 1) 
-            request.addWillBeElectricityToday(hour);
+    auto tomorrowData = dbManager.getElectricityInfo(inputInfo, true);
+
+    for (const auto& [date, hour, status, queue, subqueue] : tomorrowData) 
+    {
+        if (status == 0) 
+        {
+            request.addWillBeElectricityTomorrow(hour);
+        }
         else if (status == 2) 
-            request.addMightBeElectricityToday(hour);
-        else if (status == 3) 
-            request.addWontBeElectricityToday(hour);
+        {
+            request.addMightBeElectricityTomorrow(hour);
+        } 
+        else if (status == 1)
+        {
+            request.addWontBeElectricityTomorrow(hour);
+        }
     }
 }

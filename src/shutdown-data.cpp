@@ -197,6 +197,22 @@ void ShutdownData::addWontBeElectricityToday(int hour)
     m_wontBeElectricityToday.emplace_back(hour, hour + 1);
 }
 
+void ShutdownData::addWillBeElectricityTomorrow(int hour)
+{
+    m_willBeElectricityTomorrow.emplace_back(hour, hour + 1);
+}
+
+void ShutdownData::addMightBeElectricityTomorrow(int hour)
+{
+    m_mightBeElectricityTomorrow.emplace_back(hour, hour + 1);
+}
+
+void ShutdownData::addWontBeElectricityTomorrow(int hour)
+{
+    m_wontBeElectricityTomorrow.emplace_back(hour, hour + 1);
+}
+
+
 void ShutdownData::setQueue(int queue)
 {
     m_queue = queue;

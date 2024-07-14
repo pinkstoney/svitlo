@@ -34,6 +34,10 @@ public:
     void addMightBeElectricityToday(int hour);
     void addWontBeElectricityToday(int hour);
 
+    void addWillBeElectricityTomorrow(int hour);
+    void addMightBeElectricityTomorrow(int hour);
+    void addWontBeElectricityTomorrow(int hour);
+
     int getQueue() const { return m_queue; }
     int getSubqueue() const { return m_subqueue; }
     void setSubqueue(int subqueue);

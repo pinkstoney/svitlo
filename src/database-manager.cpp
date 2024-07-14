@@ -35,7 +35,8 @@ void DatabaseManager::initDatabase()
             HOUR INTEGER,
             STATUS INTEGER,
             QUEUE INTEGER,
-            SUBQUEUE INTEGER
+            SUBQUEUE INTEGER,
+            IS_TOMORROW INTEGER DEFAULT 0
         )
     )";
 
@@ -192,11 +193,11 @@ bool DatabaseManager::isDatabaseEmpty() const
     return count == 0;
 }
 
-void DatabaseManager::saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue) 
+void DatabaseManager::saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue, bool isTomorrow) 
 {
     int exists = 0;
-    executeSql("SELECT EXISTS(SELECT 1 FROM ElectricityInfo WHERE INFO = ? AND HOUR = ?)", 
-               {info, std::to_string(hour)}, 
+    executeSql("SELECT EXISTS(SELECT 1 FROM ElectricityInfo WHERE INFO = ? AND HOUR = ? AND IS_TOMORROW = ?)", 
+               {info, std::to_string(hour), std::to_string(isTomorrow)}, 
                [&exists](sqlite3_stmt* stmt) 
     {
         exists = sqlite3_column_int(stmt, 0);
@@ -205,25 +206,25 @@ void DatabaseManager::saveElectricityInfo(const std::string& info, const std::st
     if (exists == 1) 
     {
         prepareAndExecute(
-            "UPDATE ElectricityInfo SET DATE = ?, STATUS = ?, QUEUE = ?, SUBQUEUE = ? WHERE INFO = ? AND HOUR = ?",
-            {date, std::to_string(status), std::to_string(queue), std::to_string(subqueue), info, std::to_string(hour)}
+            "UPDATE ElectricityInfo SET DATE = ?, STATUS = ?, QUEUE = ?, SUBQUEUE = ? WHERE INFO = ? AND HOUR = ? AND IS_TOMORROW = ?",
+            {date, std::to_string(status), std::to_string(queue), std::to_string(subqueue), info, std::to_string(hour), std::to_string(isTomorrow)}
         );
     } 
     else 
     {
         prepareAndExecute(
-            "INSERT INTO ElectricityInfo (INFO, DATE, HOUR, STATUS, QUEUE, SUBQUEUE) VALUES (?, ?, ?, ?, ?, ?)",
-            {info, date, std::to_string(hour), std::to_string(status), std::to_string(queue), std::to_string(subqueue)}
+            "INSERT INTO ElectricityInfo (INFO, DATE, HOUR, STATUS, QUEUE, SUBQUEUE, IS_TOMORROW) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            {info, date, std::to_string(hour), std::to_string(status), std::to_string(queue), std::to_string(subqueue), std::to_string(isTomorrow)}
         );
     }
 }
 
-std::vector<std::tuple<std::string, int, int, int, int>> DatabaseManager::getElectricityInfo(const std::string& info) const 
+std::vector<std::tuple<std::string, int, int, int, int>> DatabaseManager::getElectricityInfo(const std::string& info, bool isTomorrow) const 
 {
     std::vector<std::tuple<std::string, int, int, int, int>> electricityInfo;
-    std::string sql = "SELECT DATE, HOUR, STATUS, QUEUE, SUBQUEUE FROM ElectricityInfo WHERE INFO = ?";
+    std::string sql = "SELECT DATE, HOUR, STATUS, QUEUE, SUBQUEUE FROM ElectricityInfo WHERE INFO = ? AND IS_TOMORROW = ?";
     
-    executeSql(sql, {info}, [&electricityInfo](sqlite3_stmt* stmt) 
+    executeSql(sql, {info, std::to_string(isTomorrow)}, [&electricityInfo](sqlite3_stmt* stmt) 
     {
         electricityInfo.emplace_back(
             reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0)),

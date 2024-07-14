@@ -29,9 +29,8 @@ public:
     void deleteUserInfo(const std::string& info);
 
     [[nodiscard]] bool isDatabaseEmpty() const;
-
-    void saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue);
-    [[nodiscard]] std::vector<std::tuple<std::string, int, int, int, int>> getElectricityInfo(const std::string& info) const;
+    void saveElectricityInfo(const std::string& info, const std::string& date, int hour, int status, int queue, int subqueue, bool isTomorrow);
+    std::vector<std::tuple<std::string, int, int, int, int>> getElectricityInfo(const std::string& info, bool isTomorrow) const;
 
 private:
     void initDatabase();

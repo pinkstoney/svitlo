@@ -16,6 +16,9 @@ public:
     void reset();
 
     void processData(const std::string& inputInfo, bool isInternetConnected);
+
+    void saveTomorrowData(const std::string& inputInfo);
+
     void setLoadingStrategy(bool isOnline);
     ShutdownData getProcessedRequest() const;
 
