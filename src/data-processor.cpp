@@ -16,6 +16,7 @@ void DataProcessor::processData(const std::string &inputInfo, bool isInternetCon
         bool isNumber = std::all_of(inputInfo.begin(), inputInfo.end(), ::isdigit);
         std::string userChoice = isNumber ? "accountNumber" : "address";
         m_request.setPostData(userChoice, inputInfo);
+
         setLoadingStrategy(isInternetConnected);
         m_dataFetchingStrategy->loadData(inputInfo, m_request, m_dbManager);  
     } 
