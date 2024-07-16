@@ -29,7 +29,7 @@ void Application::m_initializeWindow() const
 void Application::run() 
 {
    //m_isInternetConnected = m_stateManager.isInternetConnected();
-   m_isInternetConnected = false; 
+   m_isInternetConnected = true; 
     m_loadUserHomeInfo();
 
     while (!WindowShouldClose()) 
