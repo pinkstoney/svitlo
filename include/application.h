@@ -1,6 +1,6 @@
 #pragma once
 
-#include "raygui.h"
+#include <raygui.h>
 
 #include "data-fetching-strategy.h"
 #include "data-processor.h"
