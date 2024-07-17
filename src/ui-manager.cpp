@@ -7,8 +7,8 @@ UIManager::~UIManager()
 {
     GuiSetFont(GetFontDefault());
 
-    UnloadFont(m_discoveryFont);
-    UnloadFont(m_lexendFont);
+    UnloadFont(m_fixelMediumFont);
+    UnloadFont(m_FixelBoldFont);
 }
 
 void UIManager::drawCircles(const ShutdownData& request, const Font& font) const
@@ -47,25 +47,38 @@ void UIManager::listView(Rectangle bounds, const char* items, int* scrollIndex, 
 void UIManager::loadFonts()
 {
     m_defaultFont = GetFontDefault();
+    std::vector<int> codepoints;
 
-    std::vector<int> codepoints(512, 0);
-    for (int i = 0; i < 95; i++) codepoints[i] = 32 + i;
-    for (int i = 0; i < 255; i++) codepoints[96 + i] = 0x400 + i;
-    m_discoveryFont = LoadFontEx("../res/fonts/discovery.otf", 30, codepoints.data(), static_cast<int>(codepoints.size()));
+    // Basic Latin (0x0000-0x007F)
+    for (int i = 32; i <= 126; i++) 
+        codepoints.push_back(i);
 
-    GuiSetFont(m_discoveryFont);
+    // Cyrillic (0x0400-0x04FF)
+    for (int i = 0x0400; i <= 0x04FF; i++) 
+        codepoints.push_back(i);
 
-    m_lexendFont = LoadFont("../res/fonts/Lexend/static/Lexend-Bold.ttf");
+    // Ukrainian-specific letters
+    std::vector<int> ukrainianSpecific = {
+        0x0404, 0x0406, 0x0407, 0x0490, 0x0454, 0x0456, 0x0457, 0x0491
+    };
+
+    codepoints.insert(codepoints.end(), ukrainianSpecific.begin(), ukrainianSpecific.end());
+
+    m_fixelMediumFont = LoadFontEx("../res/fonts/FixelText-Medium.otf", 30, codepoints.data(), static_cast<int>(codepoints.size()));
+
+    GuiSetFont(m_fixelMediumFont);
+
+    m_FixelBoldFont = LoadFont("../res/fonts/FixelText-Bold.otf");
 }
 
-Font UIManager::getDiscoveryFont() const
+Font UIManager::getFixelMediumFont() const
 {
-    return m_discoveryFont;
+    return m_fixelMediumFont;
 }
 
-Font UIManager::getLexendFont() const
+Font UIManager::getFixelBoldFont() const
 {
-    return m_lexendFont;
+    return m_FixelBoldFont;
 }
 
 void UIManager::drawInternetStatus(bool isConnected) const

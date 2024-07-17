@@ -61,7 +61,7 @@ void ShutdownCircle::m_drawFormattedText(const std::string& text, Vector2 positi
         position.x - textSize.x / 2.0f,
         position.y - textSize.y / 2.0f
     };
-    DrawTextEx(m_font, text.c_str(), textPosition, size, 1, color);
+    DrawTextPro(m_font, text.c_str(), textPosition, {0, 0}, 0, size, 1, color);
 }
 
 void ShutdownCircle::m_drawHourText(int i, float startAngle, float endAngle, float size) const
@@ -70,7 +70,7 @@ void ShutdownCircle::m_drawHourText(int i, float startAngle, float endAngle, flo
     float textRadius = (getInnerRadius() + getRadius()) / 2;
     Vector2 textPos = calculateTextPosition(textAngle, textRadius);
     std::string hourText = m_formatHourText(i);
-    m_drawFormattedText(hourText, textPos, size, DARKGRAY);
+    m_drawFormattedText(hourText, textPos, size, BLACK);
 }
 
 void ShutdownCircle::drawHourSegments()
@@ -121,5 +121,5 @@ void ShutdownCircle::drawQueueSubqueueText() const
         getCenter().x - textSize.x / 2.0f,
         getCenter().y - textSize.y / 2.0f
     };
-    DrawTextEx(m_font, queueSubqueueText.c_str(), textPosition, 50, 1, BLACK);
+    DrawTextPro(m_font, queueSubqueueText.c_str(), textPosition, {0, 0}, 0, 50, 1, BLACK);
 }

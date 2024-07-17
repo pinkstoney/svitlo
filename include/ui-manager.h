@@ -28,8 +28,8 @@ public:
 
 public:
     void loadFonts();
-    Font getDiscoveryFont() const;
-    Font getLexendFont() const;
+    Font getFixelMediumFont() const;
+    Font getFixelBoldFont() const;
 
 public:
     void drawInternetStatus(bool isConnected) const;
@@ -44,6 +44,6 @@ public:
 
 private:
     Font m_defaultFont;
-    Font m_discoveryFont;
-    Font m_lexendFont;
+    Font m_fixelMediumFont;
+    Font m_FixelBoldFont;
 };

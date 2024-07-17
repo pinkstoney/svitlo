@@ -85,7 +85,7 @@ void Application::m_displayInputScreen()
 
 void Application::m_displayDataScreen() 
 {
-    m_uiManager.drawCircles(m_request, m_uiManager.getLexendFont());
+    m_uiManager.drawCircles(m_request, m_uiManager.getFixelBoldFont());
 
     m_displayDataSavedTime();
 
