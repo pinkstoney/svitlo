@@ -27,12 +27,9 @@ void OnlineFetchingStrategy::loadData(const std::string& inputInfo, ShutdownData
 
     std::string tomorrowDate = Utility::getTomorrowDate();
 
-#if 0
-
     if (!request.getWillBeElectricityTomorrow().empty() ||
         !request.getMightBeElectricityTomorrow().empty() ||
         !request.getWontBeElectricityTomorrow().empty()) {
-#endif
         
         for (int hour = 0; hour <= 24; ++hour) 
         {
@@ -50,7 +47,7 @@ void OnlineFetchingStrategy::loadData(const std::string& inputInfo, ShutdownData
 
             dbManager.saveElectricityInfo(inputInfo, tomorrowDate, hour, status, request.getQueue(), request.getSubqueue(), true);
         }
- //   }
+    }
 
     dbManager.saveUserInfo(inputInfo);
 }

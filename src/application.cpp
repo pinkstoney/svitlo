@@ -23,13 +23,13 @@ void Application::m_initializeWindow() const
 {
     InitWindow(appSpec.WINDOW_WIDTH, appSpec.WINDOW_HEIGHT, "Shutdown Info");
     SetTargetFPS(60);
-    GuiLoadStyle("../res/styles/candy/style_candy.rgs");
+    GuiLoadStyle("../res/styles/dark/style_dark.rgs");
 }
 
 void Application::run() 
 {
-   //m_isInternetConnected = m_stateManager.isInternetConnected();
-   m_isInternetConnected = true;
+   m_isInternetConnected = m_stateManager.isInternetConnected();
+   // m_isInternetConnected = false;
     m_loadUserHomeInfo();
 
     while (!WindowShouldClose()) 
@@ -69,9 +69,10 @@ void Application::m_displayInputScreen()
     m_uiManager.drawInternetStatus(m_isInternetConnected);
     if (m_isInternetConnected)
     {
-       m_uiManager.drawInputPrompt(); 
+       m_uiManager.drawInputPrompt();
+       m_uiManager.drawInputHint();
         
-       if (m_uiManager.textBox({140, 23, 200, 30}, m_info, sizeof(m_info), true)) 
+       if (m_uiManager.textBox({30, static_cast<float>(appSpec.WINDOW_HEIGHT/ 2 - 200), static_cast<float>(appSpec.WINDOW_WIDTH - 60), 30}, m_info, sizeof(m_info), true)) 
            m_stateManager.setAddressEntered(true);
 
         if (IsKeyPressed(KEY_ENTER) && m_stateManager.isAddressEntered()) 
@@ -95,9 +96,12 @@ void Application::m_displayDataScreen()
 
 void Application::m_displayDataSavedTime()
 {
+    if (m_isInternetConnected)
+        return;
+
     if (m_DataListCurrentActive >= 0) 
     {
-        std::string savedTime = m_allUserInfo[m_DataListCurrentActive].second;
+        std::string savedTime = m_userRecordManager.getAllUserInfo()[m_DataListCurrentActive].second;
         m_uiManager.drawDataSavedTime(savedTime);
     }
 }
@@ -121,7 +125,7 @@ void Application::m_displaySavedUserInfo()
 {
     if (m_userRecordManager.hasUserInfo())
     {
-        Rectangle bounds = {10, 100, 200, 300};
+        Rectangle bounds = {60, 390, static_cast<float>(appSpec.WINDOW_WIDTH - 420), 300};
         int scrollIndex = 0;
         int activeIndex = -1;
 

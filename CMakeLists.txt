@@ -37,7 +37,7 @@ if(raygui_POPULATED)
    
     set(STYLES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res/styles)
     file(MAKE_DIRECTORY ${STYLES_DIR})
-    file(COPY ${raygui_SOURCE_DIR}/styles/candy DESTINATION ${STYLES_DIR})
+    file(COPY ${raygui_SOURCE_DIR}/styles/ashes DESTINATION ${STYLES_DIR})
 endif()
 
 # prevent nlohmann_json from building tests

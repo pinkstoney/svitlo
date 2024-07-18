@@ -55,7 +55,7 @@ private:
   UserRecordManager m_userRecordManager;
 
 private:
-  int m_DataListCurrentActive = -1;
+  int m_DataListCurrentActive = 0;
   bool m_isInternetConnected = false;
   bool m_isSavedUserInfoDisplayed = false;
 

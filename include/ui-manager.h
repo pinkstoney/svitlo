@@ -41,6 +41,7 @@ public:
     bool drawBackButton(int windowHeight) const;
 
     void drawInputPrompt() const;
+    void drawInputHint() const;
 
 private:
     Font m_defaultFont;
