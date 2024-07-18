@@ -28,8 +28,8 @@ void Application::m_initializeWindow() const
 
 void Application::run() 
 {
-   m_isInternetConnected = m_stateManager.isInternetConnected();
-   // m_isInternetConnected = false;
+ //  m_isInternetConnected = m_stateManager.isInternetConnected();
+   m_isInternetConnected = false;
     m_loadUserHomeInfo();
 
     while (!WindowShouldClose()) 
@@ -101,7 +101,7 @@ void Application::m_displayDataSavedTime()
 
     if (m_DataListCurrentActive >= 0) 
     {
-        std::string savedTime = m_userRecordManager.getAllUserInfo()[m_DataListCurrentActive].second;
+        std::string savedTime = m_dbManager.getAllUserInfo()[m_DataListCurrentActive].second;
         m_uiManager.drawDataSavedTime(savedTime);
     }
 }
@@ -152,7 +152,8 @@ void Application::m_displaySavedUserInfo()
                 m_userRecordManager.processDeleteButton(i);
         }
     }
-}void Application::processData(const std::string& inputInfo)
+}
+void Application::processData(const std::string& inputInfo)
 {
     m_dataProcessor.processData(inputInfo, m_isInternetConnected);
     

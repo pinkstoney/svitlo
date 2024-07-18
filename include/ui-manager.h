@@ -19,7 +19,7 @@ public:
 public:
     void drawCircles(const ShutdownData& request, const Font& font) const;
 
-    void drawText(const std::string& text, int posX, int posY, int fontSize, Color color) const;
+    void drawText(const std::string& text, float posX, float posY, float fontSize, Color color) const;
     bool textBox(Rectangle bounds, char* text, int textSize, bool editMode);
 
     bool button(Rectangle bounds, const std::string& text) const;
