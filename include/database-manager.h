@@ -18,6 +18,9 @@ public:
     DatabaseManager(DatabaseManager&&) noexcept = default;
     DatabaseManager& operator=(DatabaseManager&&) noexcept = default;
 
+public:
+    bool doesTableExist(const std::string& tableName) const;
+
     void setHomeUserInfo(const std::string& info);
     void removeHomeUserInfo();
     [[nodiscard]] std::string getHomeUserInfo() const;

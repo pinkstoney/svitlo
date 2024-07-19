@@ -92,9 +92,11 @@ add_executable(${PROJECT_NAME} main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
 
 # Create test executable
-add_executable(${PROJECT_NAME}_test 
+add_executable(${PROJECT_NAME}_test
+    tests/test_runner.cpp
     tests/test_shutdown_data.cpp
     src/shutdown-data.cpp
+    tests/test_database_manager.cpp
 )
 add_dependencies(${PROJECT_NAME}_test googletest_build)
 target_include_directories(${PROJECT_NAME}_test PRIVATE 

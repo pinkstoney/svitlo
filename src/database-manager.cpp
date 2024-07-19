@@ -11,8 +11,7 @@ DatabaseManager::DatabaseManager(std::string dbPath)
     initDatabase();
 }
 
-void DatabaseManager::initDatabase() 
-{
+void DatabaseManager::initDatabase() {
     sqlite3* db;
     if (sqlite3_open(m_dbPath.c_str(), &db) != SQLITE_OK) 
         throw std::runtime_error("Failed to open database: " + std::string(sqlite3_errmsg(db)));
@@ -42,6 +41,7 @@ void DatabaseManager::initDatabase()
 
     executeSql(userInfoSql);
     executeSql(electricityInfoSql);
+
 }
 
 std::string DatabaseManager::constructFinalSql(const std::string& sql, const std::vector<std::string>& params) const {
@@ -104,6 +104,15 @@ void DatabaseManager::prepareAndExecute(const std::string& sql, const std::vecto
     if (sqlite3_step(stmt) != SQLITE_DONE) 
         throw std::runtime_error("Failed to execute statement: " + std::string(sqlite3_errmsg(m_db.get())));
 }
+
+bool DatabaseManager::doesTableExist(const std::string& tableName) const {
+    bool tableExists = false;
+    executeSql("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", {tableName}, [&tableExists](sqlite3_stmt* stmt) {
+        tableExists = true;
+    });
+    return tableExists;
+}
+
 
 void DatabaseManager::setHomeUserInfo(const std::string& info) 
 {
@@ -183,13 +192,18 @@ void DatabaseManager::deleteUserInfo(const std::string& info)
     prepareAndExecute("DELETE FROM ElectricityInfo WHERE INFO = ?", {info});
 }
 
-bool DatabaseManager::isDatabaseEmpty() const 
-{
+bool DatabaseManager::isDatabaseEmpty() const {
     int count = 0;
-    executeSql("SELECT COUNT(*) FROM UserInfo", {}, [&count](sqlite3_stmt* stmt) 
-    {
+    executeSql("SELECT COUNT(*) FROM UserInfo", {}, [&count](sqlite3_stmt* stmt) {
         count = sqlite3_column_int(stmt, 0);
     });
+
+    if (count == 0) {
+        executeSql("SELECT COUNT(*) FROM ElectricityInfo", {}, [&count](sqlite3_stmt* stmt) {
+            count = sqlite3_column_int(stmt, 0);
+        });
+    }
+    
     return count == 0;
 }
 

@@ -33,7 +33,7 @@ extern "C"
     }
 }
 
-class ShutdownDataTest : public ::testing::Test 
+class ShutdownDataTest : public ::testing::Test  
 {
 protected:
     MockCurl mockCurl;
@@ -232,10 +232,6 @@ TEST_F(ShutdownDataTest, SetQueueAndSubqueue)
 
     EXPECT_EQ(shutdownData.getQueue(), 3);
     EXPECT_EQ(shutdownData.getSubqueue(), 4);
+
 }
 
-int main(int argc, char **argv) 
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
