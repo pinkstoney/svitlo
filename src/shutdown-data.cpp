@@ -65,6 +65,8 @@ std::string ShutdownData::send() {
     CURL *curl;
     CURLcode res;
 
+    m_readBuffer.clear();
+
     curl = curl_easy_init();
     if (!curl) {
         throw std::runtime_error("Failed to init curl");

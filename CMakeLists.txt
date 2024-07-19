@@ -46,17 +46,24 @@ ExternalProject_Add(
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}/googletest
     CMAKE_ARGS
         -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/googletest
-        -DBUILD_GMOCK=OFF
+        -DBUILD_GMOCK=ON
         -DINSTALL_GTEST=ON
         -Dgtest_force_shared_crt=ON
     BUILD_BYPRODUCTS
         ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgtest.a
         ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgtest_main.a
+        ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgmock.a
+        ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgmock_main.a
 )
 add_custom_target(googletest_build DEPENDS googletest)
 
 set(GTEST_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/googletest/include)
-set(GTEST_LIBRARIES ${CMAKE_BINARY_DIR}/googletest/lib/libgtest.a ${CMAKE_BINARY_DIR}/googletest/lib/libgtest_main.a)
+set(GTEST_LIBRARIES 
+    ${CMAKE_BINARY_DIR}/googletest/lib/libgtest.a 
+    ${CMAKE_BINARY_DIR}/googletest/lib/libgtest_main.a
+    ${CMAKE_BINARY_DIR}/googletest/lib/libgmock.a
+    ${CMAKE_BINARY_DIR}/googletest/lib/libgmock_main.a
+)
 
 enable_testing()
 
@@ -87,6 +94,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
 # Create test executable
 add_executable(${PROJECT_NAME}_test 
     tests/test_shutdown_data.cpp
+    src/shutdown-data.cpp
 )
 add_dependencies(${PROJECT_NAME}_test googletest_build)
 target_include_directories(${PROJECT_NAME}_test PRIVATE 
@@ -96,6 +104,7 @@ target_link_libraries(${PROJECT_NAME}_test PRIVATE
     ${GTEST_LIBRARIES}
     ${PROJECT_NAME}_lib
     pthread
+
 )
 
 # Add custom target for building tests

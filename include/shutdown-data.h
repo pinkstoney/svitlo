@@ -12,6 +12,8 @@ public:
     ShutdownData();
     ~ShutdownData();
 
+    friend class ShutdownDataTest;
+
 public:
     void addHeader(const std::string& header);
     void setPostData(const std::string& choice, const std::string& info);
@@ -21,6 +23,8 @@ public:
     void processHour(const nlohmann::json& hourData, bool isToday);
     void formatElectricityData(const std::string& rawData);
 
+    static bool isCurlInitialized() { return s_curlInitialized; }
+    std::string& getReadBuffer() { return m_readBuffer;  } 
 public:
     const std::vector<std::pair<int, int>>& getWillBeElectricityToday() const;
     const std::vector<std::pair<int, int>>& getMightBeElectricityToday() const;
