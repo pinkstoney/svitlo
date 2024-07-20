@@ -9,6 +9,7 @@
 #include "state-manager.h"
 #include "ui-manager.h"
 #include "user-record-manager.h"
+#include "periodic-updater.h"
 
 struct ApplicationSpecification 
 {
@@ -38,6 +39,7 @@ private:
   void m_displaySavedUserInfo();
 
   void processData(const std::string &inputInfo);
+  void m_updateDataIfNeeded();
 
   void resetApplicationState();
   void clearUserInput();
@@ -53,6 +55,7 @@ private:
   std::unique_ptr<DataFetchingStrategy> m_dataFetchingStrategy;
   DataProcessor m_dataProcessor;
   UserRecordManager m_userRecordManager;
+  PeriodicUpdater m_updater;
 
 private:
   int m_DataListCurrentActive = 0;
@@ -61,6 +64,7 @@ private:
 
 private:
   char m_info[256];
+  std::string m_lastProcessedAddress;
   std::string m_errorMessage;
   std::vector<std::pair<std::string, std::string>> m_allUserInfo;
   std::string m_allUserInfoStr;

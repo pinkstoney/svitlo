@@ -1,12 +1,14 @@
 #include "../include/application.h"
 
 #include "../include/state-manager.h"
+#include <chrono>
 
 const ApplicationSpecification appSpec;
 
 Application::Application()
         : m_uiManager(), m_dbManager("user_info.db"),
-          m_dataProcessor(m_dbManager), m_userRecordManager(m_dbManager)
+          m_dataProcessor(m_dbManager), m_userRecordManager(m_dbManager),
+          m_updater(std::chrono::minutes(30)), m_lastProcessedAddress("")
 {
     SetConfigFlags(FLAG_VSYNC_HINT);
     m_initializeWindow();
@@ -86,6 +88,8 @@ void Application::m_displayInputScreen()
 
 void Application::m_displayDataScreen() 
 {
+    m_updateDataIfNeeded();
+
     m_uiManager.drawCircles(m_request, m_uiManager.getFixelBoldFont());
 
     m_displayDataSavedTime();
@@ -162,12 +166,20 @@ void Application::processData(const std::string& inputInfo)
         m_stateManager.setCurrentState(AppState::DISPLAYING_RESULTS);
         m_stateManager.setDataProcessed(true);
         m_request = m_dataProcessor.getProcessedRequest();
+        m_lastProcessedAddress = inputInfo;
+        m_updater.reset();
     }
     else
     {
         m_errorMessage = m_dataProcessor.getErrorMessage();
         resetApplicationState();
     }
+}
+
+void Application::m_updateDataIfNeeded()
+{
+    if (m_updater.shouldUpdate() && m_isInternetConnected && !m_lastProcessedAddress.empty())
+        processData(m_lastProcessedAddress);
 }
 
 void Application::resetApplicationState()
@@ -177,6 +189,7 @@ void Application::resetApplicationState()
     clearUserInput();
     m_request = ShutdownData();
     m_isSavedUserInfoDisplayed = false;
+    m_lastProcessedAddress.clear();
 }
 
 void Application::clearUserInput()
