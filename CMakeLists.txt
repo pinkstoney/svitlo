@@ -1,128 +1,80 @@
-cmake_minimum_required(VERSION 3.28)
-project(svitlo VERSION 1.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.14...3.22)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+# ---- Project ----
 
-include(FetchContent)
-include(ExternalProject)
+project(
+  Svitlo
+  VERSION 1.2
+  LANGUAGES CXX
+)
 
-function(fetch_content_if_not_found name url)
-    find_package(${name} QUIET)
-    if(NOT ${name}_FOUND)
-        FetchContent_Declare(
-            ${name}
-            URL ${url}
-        )
-        FetchContent_MakeAvailable(${name})
-    endif()
-endfunction()
+# ---- Include guards ----
 
-# Fetch dependencies
-fetch_content_if_not_found(CURL https://github.com/curl/curl/archive/refs/tags/curl-7_79_1.tar.gz)
-fetch_content_if_not_found(SQLite3 https://sqlite.org/2021/sqlite-autoconf-3350500.tar.gz)
-fetch_content_if_not_found(fmt https://github.com/fmtlib/fmt/archive/refs/tags/8.1.1.tar.gz)
-fetch_content_if_not_found(raylib https://github.com/raysan5/raylib/archive/master.tar.gz)
-fetch_content_if_not_found(nlohmann_json https://github.com/nlohmann/json/archive/refs/tags/v3.10.5.tar.gz)
-fetch_content_if_not_found(raygui https://github.com/raysan5/raygui/archive/master.tar.gz)
-
-# Configure raygui
-FetchContent_GetProperties(raygui)
-if(raygui_POPULATED)
-    set(RAYGUI_INCLUDE_DIR ${raygui_SOURCE_DIR}/src)
-    file(COPY ${RAYGUI_INCLUDE_DIR}/raygui.h DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    set(STYLES_DIR ${CMAKE_CURRENT_SOURCE_DIR}/res/styles)
-    file(MAKE_DIRECTORY ${STYLES_DIR})
-    file(COPY ${raygui_SOURCE_DIR}/styles/dark DESTINATION ${STYLES_DIR})
+if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
+  message(
+    FATAL_ERROR
+      "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there."
+  )
 endif()
 
-set(JSON_BuildTests OFF CACHE INTERNAL "")
+# ---- Add dependencies via CPM ----
 
-# Fetch and configure googletest
-ExternalProject_Add(
-    googletest
-    URL https://github.com/google/googletest/archive/release-1.11.0.tar.gz
-    PREFIX ${CMAKE_CURRENT_BINARY_DIR}/googletest
-    CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/googletest
-        -DBUILD_GMOCK=ON
-        -DINSTALL_GTEST=ON
-        -Dgtest_force_shared_crt=ON
-    BUILD_BYPRODUCTS
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgtest.a
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgtest_main.a
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgmock.a
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest/lib/libgmock_main.a
-)
-add_custom_target(googletest_build DEPENDS googletest)
+include(cmake/CPM.cmake)
 
-set(GTEST_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/googletest/include)
-set(GTEST_LIBRARIES 
-    ${CMAKE_BINARY_DIR}/googletest/lib/libgtest.a 
-    ${CMAKE_BINARY_DIR}/googletest/lib/libgtest_main.a
-    ${CMAKE_BINARY_DIR}/googletest/lib/libgmock.a
-    ${CMAKE_BINARY_DIR}/googletest/lib/libgmock_main.a
+# PackageProject.cmake will be used to make our target installable
+CPMAddPackage("gh:TheLartians/PackageProject.cmake@1.8.0")
+
+CPMAddPackage(
+  NAME fmt
+  GIT_TAG 10.2.1
+  GITHUB_REPOSITORY fmtlib/fmt
+  OPTIONS "FMT_INSTALL YES" # create an installable target
 )
 
-enable_testing()
-
-# Gather library sources
-file(GLOB_RECURSE LIB_SOURCES 
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-)
-list(FILTER LIB_SOURCES EXCLUDE REGEX ".*(test|example|third_party|deps/nlohmann_json-src/third_party)/.*")
-
-# Create project library
-add_library(${PROJECT_NAME}_lib ${LIB_SOURCES})
-target_include_directories(${PROJECT_NAME}_lib PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${RAYGUI_INCLUDE_DIR}
-)
-target_link_libraries(${PROJECT_NAME}_lib PUBLIC
-    CURL::libcurl
-    SQLite::SQLite3
-    fmt::fmt
-    raylib
-    nlohmann_json::nlohmann_json
+CPMAddPackage(
+  NAME cURL
+  GIT_TAG curl-7_79_1
+  GITHUB_REPOSITORY curl/curl
+  OPTIONS "BUILD_CURL_EXE OFF" # only build the library, not the curl executable
 )
 
-# Create main executable
-add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_lib)
+# ---- Add source files ----
 
-# Create test executable
-add_executable(${PROJECT_NAME}_test
-    tests/test_runner.cpp
-    tests/test_shutdown_data.cpp
-    src/shutdown-data.cpp
-    tests/test_database_manager.cpp
-)
-add_dependencies(${PROJECT_NAME}_test googletest_build)
-target_include_directories(${PROJECT_NAME}_test PRIVATE 
-    ${GTEST_INCLUDE_DIRS}
-)
-target_link_libraries(${PROJECT_NAME}_test PRIVATE
-    ${GTEST_LIBRARIES}
-    ${PROJECT_NAME}_lib
-    pthread
-
+set(headers
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/svitlo/electricity-data.h" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/svitlo/consumer.h" 
 )
 
-# Add custom target for building tests
-add_custom_target(build_tests ALL DEPENDS ${PROJECT_NAME}_test)
-
-# Add test
-add_test(NAME ${PROJECT_NAME}_test COMMAND ${PROJECT_NAME}_test --gtest_color=yes --gtest_output=xml:${CMAKE_BINARY_DIR}/gtest_report.xml)
-
-set(CMAKE_CTEST_ARGUMENTS "--output-on-failure --verbose")
-
-# Install target
-include(GNUInstallDirs)
-install(TARGETS ${PROJECT_NAME} 
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+set(sources
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/electricity-data.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/consumer.cpp" 
 )
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/res $<TARGET_FILE_DIR:${PROJECT_NAME}>/res
+
+# ---- Create library ----
+add_library(${PROJECT_NAME} ${headers} ${sources})
+set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+
+target_compile_options(${PROJECT_NAME} PUBLIC "$<$<COMPILE_LANG_AND_ID:CXX,MSVC>:/permissive->")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt CURL::libcurl)
+
+target_include_directories(
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+)
+
+# ---- Create an installable target ----
+
+string(TOLOWER ${PROJECT_NAME}/version.h VERSION_HEADER_LOCATION)
+
+packageProject(
+  NAME ${PROJECT_NAME}
+  VERSION ${PROJECT_VERSION}
+  NAMESPACE ${PROJECT_NAME}
+  BINARY_DIR ${PROJECT_BINARY_DIR}
+  INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include
+  INCLUDE_DESTINATION include/${PROJECT_NAME}-${PROJECT_VERSION}
+  VERSION_HEADER "${VERSION_HEADER_LOCATION}"
+  COMPATIBILITY SameMajorVersion
+  DEPENDENCIES "fmt 9.1.0"
 )
