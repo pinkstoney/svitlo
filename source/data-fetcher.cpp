@@ -1,6 +1,9 @@
 #include <iostream>
 #include <stdexcept>
+
 #include <svitlo/data-fetcher.h>
+
+using namespace svitlo;
 
 bool DataFetcher::s_curlInitialized = false;
 curl_slist* DataFetcher::s_headers = nullptr;

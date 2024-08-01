@@ -23,6 +23,6 @@ private:
     int m_queue;
     int m_subqueue;
     std::string m_id;
-    std::unique_ptr<ElectricityData> m_electricityData;
+    std::array<ElectricityData::Status, 24> m_electricityData;
 };
 } // namespace svitlo

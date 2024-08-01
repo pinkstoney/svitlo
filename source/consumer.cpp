@@ -1,6 +1,6 @@
 #include <svitlo/consumer.h>
 
-#include <utility>
+#include <stdexcept>
 
 using namespace svitlo;
 
@@ -8,7 +8,7 @@ Consumer::Consumer(int queue, int subqueue, std::string id)
     : m_queue(queue)
     , m_subqueue(subqueue)
     , m_id(std::move(id))
-    , m_electricityData(std::make_unique<ElectricityData>())
+    , m_electricityData{ElectricityData::Status::Unknown}
 {
     if (m_id.empty())
         throw std::invalid_argument("Consumer ID cannot be empty");
@@ -16,16 +16,14 @@ Consumer::Consumer(int queue, int subqueue, std::string id)
 
 void Consumer::setElectricityStatus(int hour, ElectricityData::Status status)
 {
-    if (!m_electricityData)
-        m_electricityData = std::make_unique<ElectricityData>();
-
-    m_electricityData->addStatus(hour, status);
+    if (hour < 0 || hour > 23)
+        throw std::out_of_range("Hour must be between 0 and 23");
+    m_electricityData[hour] = status;
 }
 
 ElectricityData::Status Consumer::getElectricityStatus(int hour) const
 {
-    if (!m_electricityData)
-        return ElectricityData::Status::Unknown;
-
-    return m_electricityData->getStatus(hour);
+    if (hour < 0 || hour > 23)
+        throw std::out_of_range("Hour must be between 0 and 23");
+    return m_electricityData[hour];
 }

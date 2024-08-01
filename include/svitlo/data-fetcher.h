@@ -3,6 +3,9 @@
 #include <curl/curl.h>
 #include <string>
 
+namespace svitlo
+{
+
 class DataFetcher
 {
 public:
@@ -27,3 +30,4 @@ private:
     std::string m_readBuffer;
     std::string m_headerBuffer;
 };
+} // namespace svitlo
