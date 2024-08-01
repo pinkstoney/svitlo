@@ -9,13 +9,16 @@
 
 namespace svitlo
 {
-struct sqlite3;
 
 class DatabaseManager
 {
 public:
-    DatabaseManager(const std::string& dbName);
+    explicit DatabaseManager(const std::string& dbName);
     ~DatabaseManager();
+    DatabaseManager(const DatabaseManager&) = delete;
+    DatabaseManager& operator=(const DatabaseManager&) = delete;
+    DatabaseManager(DatabaseManager&&) noexcept;
+    DatabaseManager& operator=(DatabaseManager&&) noexcept;
 
 public:
     void createTables();
@@ -23,6 +26,8 @@ public:
     std::unique_ptr<Consumer> loadConsumer(const std::string& id);
 
 private:
-    ::sqlite3* m_db;
+    class Impl;
+    std::unique_ptr<Impl> pImpl;
 };
+
 } // namespace svitlo

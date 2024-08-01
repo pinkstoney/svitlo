@@ -10,18 +10,18 @@ void printStatus(ElectricityData::Status status)
 {
     switch (status)
     {
-    case ElectricityData::Status::Unknown:
-        std::cout << "Unknown";
-        break;
-    case ElectricityData::Status::No:
-        std::cout << "No electricity";
-        break;
-    case ElectricityData::Status::Yes:
-        std::cout << "Yes, electricity";
-        break;
-    case ElectricityData::Status::Maybe:
-        std::cout << "Maybe electricity";
-        break;
+        case ElectricityData::Status::Unknown:
+            std::cout << "Unknown";
+            break;
+        case ElectricityData::Status::No:
+            std::cout << "No electricity";
+            break;
+        case ElectricityData::Status::Yes:
+            std::cout << "Yes, electricity";
+            break;
+        case ElectricityData::Status::Maybe:
+            std::cout << "Maybe electricity";
+            break;
     }
 }
 
