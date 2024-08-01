@@ -38,11 +38,13 @@ set(headers
     "${CMAKE_CURRENT_SOURCE_DIR}/include/svitlo/electricity-data.h" 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/svitlo/consumer.h" 
     "${CMAKE_CURRENT_SOURCE_DIR}/include/svitlo/database-manager.h" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/svitlo/data-fetcher.h" 
 )
 set(sources
     "${CMAKE_CURRENT_SOURCE_DIR}/source/electricity-data.cpp" 
     "${CMAKE_CURRENT_SOURCE_DIR}/source/consumer.cpp" 
     "${CMAKE_CURRENT_SOURCE_DIR}/source/database-manager.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/data-fetcher.cpp" 
 )
 
 # ---- Create library ----

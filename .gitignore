@@ -234,3 +234,10 @@ CMakeFiles/3.30.0/CMakeDetermineCompilerABI_CXX.bin
 CMakeFiles/3.30.0/CMakeSystem.cmake
 CMakeFiles/3.30.0/CompilerIdCXX/CMakeCXXCompilerId.cpp
 CMakeFiles/3.30.0/CompilerIdCXX/CMakeCXXCompilerId.o
+.cache/clangd/index/consumer.h.0A6ED138ECCFB540.idx
+.cache/clangd/index/data-fetcher.h.BEEAF31AC5D59822.idx
+.cache/clangd/index/database-manager.cpp.350F65164F039FAA.idx
+.cache/clangd/index/database-manager.h.239195F763F8D5B0.idx
+.cache/clangd/index/electricity-data.cpp.61B470816C307DAF.idx
+.cache/clangd/index/electricity-data.h.A10F7D6705BCD40A.idx
+.cache/clangd/index/main.cpp.7F9ED61D5887F8B8.idx
