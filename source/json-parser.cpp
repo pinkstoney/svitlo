@@ -7,9 +7,7 @@ Consumer JsonParser::parseConsumerData(const std::string& jsonStr, const std::st
     auto j = nlohmann::json::parse(jsonStr);
 
     if (!j.contains("current") || !j["current"].contains("queue") || !j["current"].contains("subqueue"))
-    {
         throw std::runtime_error("Invalid JSON structure: missing required fields");
-    }
 
     int queue = j["current"]["queue"];
     int subqueue = j["current"]["subqueue"];
@@ -19,21 +17,22 @@ Consumer JsonParser::parseConsumerData(const std::string& jsonStr, const std::st
     if (j.contains("graphs"))
     {
         if (j["graphs"].contains("today"))
-            parseElectricityData(consumer, j["graphs"]["today"]);
+            parseElectricityData(consumer, j["graphs"]["today"], "today");
 
         if (j["graphs"].contains("tomorrow"))
-            parseElectricityData(consumer, j["graphs"]["tomorrow"]);
+            parseElectricityData(consumer, j["graphs"]["tomorrow"], "tomorrow");
     }
 
     return consumer;
 }
 
-void JsonParser::parseElectricityData(Consumer& consumer, const nlohmann::json& graphData)
+void JsonParser::parseElectricityData(Consumer& consumer, const nlohmann::json& graphData, const std::string& date)
 {
-    if (!graphData.contains("hoursList"))
-    {
+    if (!graphData.contains("hoursList") || !graphData.contains("eventDate") || !graphData.contains("scheduleApprovedSince"))
         return;
-    }
+
+    std::string eventDate = graphData["eventDate"];
+    consumer.setScheduleApprovedSince(eventDate, graphData["scheduleApprovedSince"]);
 
     for (const auto& hourData : graphData["hoursList"])
     {
@@ -47,6 +46,6 @@ void JsonParser::parseElectricityData(Consumer& consumer, const nlohmann::json& 
         ElectricityData::Status status =
             hourData["electricity"].get<int>() == 1 ? ElectricityData::Status::Yes : ElectricityData::Status::No;
 
-        consumer.setElectricityStatus(hour, status);
+        consumer.setElectricityStatus(eventDate, hour, status);
     }
 }

@@ -14,7 +14,7 @@ public:
     static Consumer parseConsumerData(const std::string& jsonStr, const std::string& id);
 
 private:
-    static void parseElectricityData(Consumer& consumer, const nlohmann::json& graphData);
+    static void parseElectricityData(Consumer& consumer, const nlohmann::json& graphData, const std::string& date);
 };
 
 } // namespace svitlo

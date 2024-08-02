@@ -1,5 +1,5 @@
 #include <iostream>
-
+#include <stdexcept>
 #include <svitlo/consumer.h>
 #include <svitlo/data-fetcher.h>
 #include <svitlo/database-manager.h>
@@ -36,15 +36,20 @@ void loadAndPrintConsumerData(const std::string& info, DatabaseManager& dbManage
             std::cout << "Consumer ID (Account/Address): " << consumer->getId() << std::endl;
             std::cout << "Queue: " << consumer->getQueue() << std::endl;
             std::cout << "Subqueue: " << consumer->getSubqueue() << std::endl;
-            std::cout << "Electricity Status:" << std::endl;
-            for (int hour = 0; hour < 24; ++hour)
+
+            for (const auto& date : {"today", "tomorrow"})
             {
-                auto status = consumer->getElectricityStatus(hour);
-                std::cout << "  Hour " << (hour + 1) << ": "
-                          << (status == ElectricityData::Status::Yes  ? "On"
-                              : status == ElectricityData::Status::No ? "Off"
-                                                                      : "Unknown")
-                          << std::endl;
+                std::cout << "\nElectricity Status for " << date << ":" << std::endl;
+                std::cout << "Schedule Approved Since: " << consumer->getScheduleApprovedSince(date) << std::endl;
+                for (int hour = 0; hour < 24; ++hour)
+                {
+                    auto status = consumer->getElectricityStatus(date, hour);
+                    std::cout << "  Hour " << (hour + 1) << ": "
+                              << (status == ElectricityData::Status::Yes  ? "On"
+                                  : status == ElectricityData::Status::No ? "Off"
+                                                                          : "Unknown")
+                              << std::endl;
+                }
             }
         }
         else
